@@ -7,3 +7,6 @@ up:
 
 down:
     docker compose down 
+
+populate-test-events:
+    python scripts/populate_test_events.py

@@ -8,23 +8,23 @@ Soonish is a sleek web application that helps you track upcoming events with bea
 Choose from three beautiful themes to match your style:
 
 #### Gruvbox Theme
-[Screenshot of main interface with Gruvbox theme]
+![Gruvbox theme screenshot](screenshots/themes/gruvbox.png)
 
 #### Nord Theme
-[Screenshot of main interface with Nord theme]
+![Nord theme screenshot](screenshots/themes/nord.png)
 
 #### Tokyo Night Theme
-[Screenshot of main interface with Tokyo Night theme]
+![Tokyo Night theme screenshot](screenshots/themes/tokyo-night.png)
 
 ### Event Cards
 Smart, compact event cards show you what matters:
 
-[Screenshot of event cards showing different states: upcoming event, nearly due event, and passed event]
+![Event cards in different states](screenshots/features/event-card.png)
 
 ### Event Backgrounds
 Personalize your events with beautiful backgrounds:
 
-[Screenshot of event detail view showing background image integration]
+![Event detail with background](screenshots/features/event-detail.png)
 
 ## Features
 
