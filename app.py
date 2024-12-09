@@ -8,6 +8,10 @@ from sqlalchemy.orm import Session
 from database import get_db, DBEvent
 import uvicorn
 import random
+import logging
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -76,6 +80,100 @@ async def delete_event(event_id: int, db: Session = Depends(get_db)):
         db.commit()
         return {"status": "success", "id": event_id}
     return {"status": "not_found"}
+
+@app.get("/random_images")
+async def get_random_images():
+    # List of curated Unsplash images
+    images = [
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1501139083538-0139583c060f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1501139083538-0139583c060f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Scenic mountain landscape"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1495364141860-b0d03eccd065?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1495364141860-b0d03eccd065?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Sunset over ocean"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1557180295-76eee20ae8aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1557180295-76eee20ae8aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Mountain peaks at dawn"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1508962914676-134849a727f0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1508962914676-134849a727f0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Northern lights"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1465929639680-64ee080eb3ed?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1465929639680-64ee080eb3ed?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Starry night sky"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1518281420975-50db6e5d0a97?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1518281420975-50db6e5d0a97?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Desert landscape"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1506466010722-395aa2bef877?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1506466010722-395aa2bef877?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Autumn forest"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Milky way galaxy"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1472148439583-1f4cf81b80e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1472148439583-1f4cf81b80e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "City at night"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Snowy mountains"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1446776858070-70c3d5ed6758?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1446776858070-70c3d5ed6758?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Milky way over mountains"
+        },
+        {
+            "urls": {
+                "small": "https://images.unsplash.com/photo-1579033461380-adb47c3eb938?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                "regular": "https://images.unsplash.com/photo-1579033461380-adb47c3eb938?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+            },
+            "alt_description": "Clock on desk"
+        }
+    ]
+    
+    # Randomly select 6 images
+    selected_images = random.sample(images, 6)
+    return selected_images
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8002, reload=True)

@@ -12,6 +12,7 @@
         let fp = null;
         let currentCountdownInterval = null;
         let currentEventId = null;
+        let eventData = {};
 
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
@@ -232,10 +233,99 @@
                 });
         }
 
+        async function loadRandomImages() {
+            console.log('Loading random images...');
+            const grid = document.getElementById('imageGrid');
+            const button = document.getElementById('showMoreBtn');
+            const icon = button.querySelector('.icon');
+            
+            // Start rotation
+            icon.style.transform = 'rotate(360deg)';
+            
+            try {
+                console.log('Fetching from /random_images');
+                const response = await fetch('/random_images');
+                const images = await response.json();
+                console.log('Received images:', images);
+                
+                // Clear existing images
+                grid.innerHTML = '';
+                
+                // Add new images
+                images.forEach(image => {
+                    const div = document.createElement('div');
+                    div.className = 'image-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = image.urls.small;
+                    img.alt = image.alt_description || 'Random image';
+                    img.loading = 'lazy';
+                    
+                    // Add click handler to both div and img
+                    const clickHandler = () => {
+                        console.log('Image clicked:', image.urls.regular);
+                        const imageUrlInput = document.querySelector('input[placeholder="Leave empty for a random image"]');
+                        if (imageUrlInput) {
+                            imageUrlInput.value = image.urls.regular;
+                            console.log('Updated input value');
+                        }
+                        closeImagePicker();
+                    };
+                    
+                    div.addEventListener('click', clickHandler);
+                    img.addEventListener('click', clickHandler);
+                    
+                    div.appendChild(img);
+                    grid.appendChild(div);
+                });
+                
+            } catch (error) {
+                console.error('Error loading images:', error);
+            }
+            
+            // Reset rotation after animation
+            setTimeout(() => {
+                icon.style.transform = '';
+            }, 300);
+        }
+
+        function showMoreImages(event) {
+            console.log('Show more images clicked');
+            if (event) {
+                event.preventDefault();
+            }
+            
+            loadRandomImages();
+        }
+
+        function showImagePicker() {
+            console.log('Opening image picker');
+            const modal = document.getElementById('imagePickerModal');
+            modal.classList.add('active');
+            document.body.classList.add('modal-open');
+            loadRandomImages();
+        }
+
+        function closeImagePicker() {
+            console.log('Closing image picker');
+            const modal = document.getElementById('imagePickerModal');
+            modal.classList.remove('active');
+            document.body.classList.remove('modal-open');
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Setting up event listeners');
             initTheme();
             initFlatpickr();
             loadEvents();
+
+            const showMoreButton = document.querySelector('.show-more-images');
+            if (showMoreButton) {
+                showMoreButton.addEventListener('click', showMoreImages);
+                console.log('Show more button listener added');
+            } else {
+                console.log('Show more button not found');
+            }
 
             // Handle form submission
             const form = document.getElementById('event-form');
@@ -294,9 +384,10 @@
                 <span class="calendar-icon">📅</span>
             </div>
             <div class="form-group">
-                <label for="image-url">Image URL (optional)</label>
+                <label for="image-url">Image URL</label>
                 <div class="input-group">
                     <input type="text" id="image-url" name="image_url" placeholder="Leave empty for a random image">
+                    <button type="button" class="browse-images" onclick="showImagePicker()">Browse Images</button>
                 </div>
             </div>
             <div class="form-group">
@@ -311,6 +402,25 @@
     <div id="modalOverlay" class="modal-overlay"></div>
     <div id="eventModal" class="modal">
         <div class="modal-content"></div>
+    </div>
+
+    <!-- Image Picker Modal -->
+    <div id="imagePickerModal" class="modal">
+        <div class="modal-content image-picker-content">
+            <div class="modal-header">
+                <h2>Choose an Image</h2>
+                <button class="modal-close" onclick="closeImagePicker()">&times;</button>
+            </div>
+            <div class="image-grid" id="imageGrid">
+                <!-- Images will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="showMoreBtn" class="show-more-images" onclick="loadRandomImages()">
+                    <span class="icon">↻</span>
+                    Show More Images
+                </button>
+            </div>
+        </div>
     </div>
 </body>
 </html>
