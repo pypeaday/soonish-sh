@@ -91,6 +91,9 @@
                     const overlay = document.getElementById('modalOverlay');
                     const modalContent = document.querySelector('.modal-content');
                     
+                    // Set the background image of the modal
+                    modalContent.style.backgroundImage = `url('${event.image_url}')`;
+                    
                     modalContent.innerHTML = `
                         <div class="modal-header">
                             <h2>${event.name}</h2>
@@ -99,7 +102,6 @@
                                 <button class="modal-close" onclick="closeModal()">&times;</button>
                             </div>
                         </div>
-                        <img class="modal-image" src="${event.image_url}" alt="${event.name}">
                         <p class="modal-message">${event.message}</p>
                         <div class="modal-countdown" id="modalCountdown"></div>
                     `;
@@ -192,8 +194,51 @@
             };
         }
 
-        // Close modal when clicking outside
+        function loadEvents() {
+            fetch('/api/events')
+                .then(response => response.json())
+                .then(events => {
+                    const container = document.getElementById('events-container');
+                    container.innerHTML = events.map(event => `
+                        <div class="event-card" onclick="showEvent(${event.id})">
+                            <div class="event-icon">
+                                <img src="${event.image_url}" alt="${event.name}">
+                            </div>
+                            <div class="event-info">
+                                <h3>${event.name}</h3>
+                                <p>${event.message}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            initFlatpickr();
+            loadEvents();
+
+            // Handle form submission
+            const form = document.getElementById('event-form');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                
+                fetch('/create_event', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        form.reset();
+                        loadEvents();
+                    }
+                });
+            });
+
+            // Close modal when clicking outside
             const overlay = document.getElementById('modalOverlay');
             overlay.addEventListener('click', function(e) {
                 if (e.target === overlay) {
@@ -207,25 +252,6 @@
                     closeModal();
                 }
             });
-
-            initTheme();
-            initFlatpickr();
-
-            // Fetch and display events
-            fetch('/api/events')
-                .then(response => response.json())
-                .then(events => {
-                    const container = document.getElementById('events-container');
-                    container.innerHTML = events.map((event, index) => `
-                        <div class="event-card" onclick="showEvent(${event.id})">
-                            <img src="${event.image_url}" alt="${event.name}" onerror="this.src='https://images.unsplash.com/photo-1501139083538-0139583c060f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80'">
-                            <div class="event-info">
-                                <h3>${event.name}</h3>
-                                <p>${event.message}</p>
-                            </div>
-                        </div>
-                    `).join('');
-                });
         });
     </script>
 </head>
@@ -240,7 +266,7 @@
 
     <div class="container fade-in">
         <h1>Countdown Events</h1>
-        <form action="/create_event" method="post">
+        <form id="event-form" action="/create_event" method="post">
             <div class="form-group">
                 <input type="text" name="name" placeholder="Event Name" required>
             </div>
@@ -249,12 +275,9 @@
                 <span class="calendar-icon">📅</span>
             </div>
             <div class="form-group">
-                <input type="text" name="image_url" id="image-url" 
-                    placeholder="Image URL (or leave for default)" 
-                    value="https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&auto=format&fit=crop"
-                    oninput="previewImage(this.value)">
-                <div id="image-preview" class="image-preview">
-                    <img src="https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&auto=format&fit=crop" alt="Preview">
+                <label for="image-url">Image URL (optional)</label>
+                <div class="input-group">
+                    <input type="text" id="image-url" name="image_url" placeholder="Leave empty for a random image">
                 </div>
             </div>
             <div class="form-group">
