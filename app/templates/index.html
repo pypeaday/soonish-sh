@@ -211,9 +211,17 @@
                 .then(response => response.json())
                 .then(events => {
                     const container = document.getElementById('events-container');
+                    
+                    // Sort events by time remaining
+                    const now = new Date().getTime();
+                    events.sort((a, b) => {
+                        const timeA = new Date(a.target_time).getTime() - now;
+                        const timeB = new Date(b.target_time).getTime() - now;
+                        return timeA - timeB;
+                    });
+                    
                     container.innerHTML = events.map(event => {
                         const targetTime = new Date(event.target_time).getTime();
-                        const now = new Date().getTime();
                         const distance = targetTime - now;
                         const countdownText = distance < 0 ? "Time's up!" : formatCountdown(distance);
                         
