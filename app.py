@@ -52,7 +52,16 @@ async def create_event(
 @app.get("/api/events")
 async def get_events(db: Session = Depends(get_db)):
     events = db.query(DBEvent).all()
-    return [event.to_dict() for event in events]
+    return [{"id": event.id, **event.to_dict()} for event in events]
+
+@app.delete("/api/events/{event_id}")
+async def delete_event(event_id: int, db: Session = Depends(get_db)):
+    event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
+    if event:
+        db.delete(event)
+        db.commit()
+        return {"status": "success", "id": event_id}
+    return {"status": "not_found"}
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8002, reload=True)

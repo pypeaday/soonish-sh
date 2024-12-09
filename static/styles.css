@@ -214,20 +214,48 @@ a:hover {
     margin-bottom: 1rem;
 }
 
+.modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.modal-delete {
+    background-color: #dc2626 !important;
+    color: white !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.25rem !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-size: 0.875rem !important;
+    transition: background-color 0.2s !important;
+    width: auto !important;
+}
+
+.modal-delete:hover {
+    background-color: #b91c1c !important;
+}
+
+.modal-delete:active {
+    transform: scale(0.98);
+}
+
 .modal-close {
-    background: none;
-    border: none;
-    color: var(--fg-secondary);
-    cursor: pointer;
-    font-size: 1.5rem;
-    padding: 0.5rem;
-    width: auto;
-    transition: color 0.2s;
+    background: none !important;
+    border: none !important;
+    color: var(--fg-secondary) !important;
+    cursor: pointer !important;
+    font-size: 1.5rem !important;
+    padding: 0.25rem 0.5rem !important;
+    width: auto !important;
+    height: auto !important;
+    line-height: 1 !important;
+    transition: color 0.2s !important;
 }
 
 .modal-close:hover {
-    color: var(--accent);
-    background: none;
+    color: var(--accent) !important;
+    background: none !important;
 }
 
 .modal-image {
@@ -424,6 +452,37 @@ h1 {
 
 input[data-input] {
     cursor: pointer;
+}
+
+/* Image preview */
+.image-preview {
+    margin-top: 0.5rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--accent);
+    aspect-ratio: 16/9;
+    position: relative;
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+.image-preview img[src=""] {
+    opacity: 0;
+}
+
+.image-preview img:not([src=""]) {
+    opacity: 1;
+}
+
+/* Add error state for invalid images */
+.image-preview img.error {
+    opacity: 0.3;
 }
 
 /* Animations */
