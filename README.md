@@ -133,7 +133,7 @@ soonish/
 
 ### Environment Variables
 
-- `HOST_PORT`: The port number on your host machine (default: 8000)
+- `SOONISH_PORT`: The port number on your host machine (default: 8000)
 
 ### Docker Commands
 
@@ -141,7 +141,7 @@ soonish/
 - Rebuild the container: `docker compose up --build`
 - Stop the application: `docker compose down`
 - View logs: `docker compose logs -f`
-- Run on a different port: `HOST_PORT=3000 docker compose up`
+- Run on a different port: `SOONISH_PORT=3000 docker compose up`
 
 ## Contributing
 
