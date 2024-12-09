@@ -173,6 +173,12 @@ a:hover {
     color: var(--accent);
 }
 
+.event-countdown {
+    color: var(--accent) !important;
+    font-weight: 600 !important;
+    margin-top: 0.5rem !important;
+}
+
 /* Modal styles */
 .modal-overlay {
     display: none;
@@ -273,12 +279,23 @@ a:hover {
     line-height: 1.5;
 }
 
-.modal-countdown {
+.modal-target-time {
+    position: relative;
+    z-index: 1;
+    color: rgba(255, 255, 255, 0.7);
     text-align: center;
-    font-size: 1.5rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.modal-countdown {
+    font-family: monospace;
+    font-size: 2.5rem;
     font-weight: bold;
-    color: var(--accent);
-    margin: 1rem 0;
+    text-align: center;
+    margin-top: 2rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.1em;
 }
 
 /* Prevent body scroll when modal is open */
@@ -325,10 +342,12 @@ body.modal-open {
 
 /* Typography */
 h1 {
-    font-size: 1.5rem;
-    margin: 1rem 0;
+    font-size: 2.5rem;
     color: var(--accent);
+    margin-bottom: 2rem;
     text-align: center;
+    font-weight: 800;
+    letter-spacing: -0.03em;
 }
 
 /* DateTime picker styles */

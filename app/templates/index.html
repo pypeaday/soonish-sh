@@ -6,7 +6,7 @@
     <link href="/static/styles.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
-    <title>Countdown App</title>
+    <title>soonish</title>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         let fp = null;
@@ -76,6 +76,21 @@
             document.getElementById('theme-select').value = savedTheme;
         }
 
+        function formatCountdown(distance) {
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            const parts = [];
+            if (days > 0) parts.push(`${days}d`);
+            if (hours > 0 || days > 0) parts.push(`${hours}h`);
+            if (minutes > 0 || hours > 0 || days > 0) parts.push(`${minutes}m`);
+            parts.push(`${seconds}s`);
+
+            return parts.join(' ');
+        }
+
         function showEvent(eventId) {
             currentEventId = eventId;
             fetch(`/api/events`)
@@ -91,7 +106,6 @@
                     const overlay = document.getElementById('modalOverlay');
                     const modalContent = document.querySelector('.modal-content');
                     
-                    // Set the background image of the modal
                     modalContent.style.backgroundImage = `url('${event.image_url}')`;
                     
                     modalContent.innerHTML = `
@@ -104,6 +118,7 @@
                         </div>
                         <p class="modal-message">${event.message}</p>
                         <div class="modal-countdown" id="modalCountdown"></div>
+                        <div class="modal-target-time">Target: ${new Date(event.target_time).toLocaleString()}</div>
                     `;
 
                     if (currentCountdownInterval) {
@@ -117,15 +132,11 @@
                         const now = new Date().getTime();
                         const distance = targetTime - now;
 
-                        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
                         if (distance < 0) {
-                            countdownElement.innerHTML = "EXPIRED";
+                            countdownElement.innerHTML = "Time's up!";
                             clearInterval(currentCountdownInterval);
                         } else {
-                            countdownElement.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+                            countdownElement.innerHTML = formatCountdown(distance);
                         }
                     }
 
@@ -199,17 +210,25 @@
                 .then(response => response.json())
                 .then(events => {
                     const container = document.getElementById('events-container');
-                    container.innerHTML = events.map(event => `
-                        <div class="event-card" onclick="showEvent(${event.id})">
-                            <div class="event-icon">
-                                <img src="${event.image_url}" alt="${event.name}">
+                    container.innerHTML = events.map(event => {
+                        const targetTime = new Date(event.target_time).getTime();
+                        const now = new Date().getTime();
+                        const distance = targetTime - now;
+                        const countdownText = distance < 0 ? "Time's up!" : formatCountdown(distance);
+                        
+                        return `
+                            <div class="event-card" onclick="showEvent(${event.id})">
+                                <div class="event-icon">
+                                    <img src="${event.image_url}" alt="${event.name}">
+                                </div>
+                                <div class="event-info">
+                                    <h3>${event.name}</h3>
+                                    <p class="event-message">${event.message}</p>
+                                    <p class="event-countdown">${countdownText}</p>
+                                </div>
                             </div>
-                            <div class="event-info">
-                                <h3>${event.name}</h3>
-                                <p>${event.message}</p>
-                            </div>
-                        </div>
-                    `).join('');
+                        `;
+                    }).join('');
                 });
         }
 
@@ -265,7 +284,7 @@
     </div>
 
     <div class="container fade-in">
-        <h1>Countdown Events</h1>
+        <h1>soonish</h1>
         <form id="event-form" action="/create_event" method="post">
             <div class="form-group">
                 <input type="text" name="name" placeholder="Event Name" required>
