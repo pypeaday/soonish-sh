@@ -226,7 +226,7 @@
                         const countdownText = distance < 0 ? "Time's up!" : formatCountdown(distance);
                         
                         return `
-                            <div class="event-card" onclick="showEvent(${event.id})">
+                            <div class="event-card" data-event-id="${event.id}" onclick="showEvent(${event.id})" oncontextmenu="showContextMenu(event, ${event.id}); return false;">
                                 <div class="event-icon">
                                     <img src="${event.image_url}" alt="${event.name}">
                                 </div>
@@ -239,6 +239,53 @@
                         `;
                     }).join('');
                 });
+        }
+
+        function showContextMenu(event, eventId) {
+            const contextMenu = document.getElementById('contextMenu');
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = event.pageX + 'px';
+            contextMenu.style.top = event.pageY + 'px';
+            
+            // Store the event ID for the context menu actions
+            contextMenu.dataset.eventId = eventId;
+            
+            // Remove any existing event listeners
+            const existingItems = contextMenu.querySelectorAll('.context-menu-item');
+            existingItems.forEach(item => {
+                item.replaceWith(item.cloneNode(true));
+            });
+            
+            // Add new event listeners
+            contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
+                item.addEventListener('click', handleContextMenuAction);
+            });
+        }
+
+        function handleContextMenuAction(e) {
+            const action = e.currentTarget.dataset.action;
+            const eventId = e.currentTarget.parentElement.dataset.eventId;
+            
+            hideContextMenu();
+            
+            switch(action) {
+                case 'edit':
+                    editEvent(eventId);
+                    break;
+                case 'delete':
+                    deleteEvent(eventId);
+                    break;
+            }
+        }
+
+        function hideContextMenu() {
+            const contextMenu = document.getElementById('contextMenu');
+            contextMenu.style.display = 'none';
+        }
+
+        function editEvent(eventId) {
+            // TODO: Implement edit functionality
+            console.log('Edit event:', eventId);
         }
 
         async function loadRandomImages() {
@@ -369,6 +416,20 @@
                     closeModal();
                 }
             });
+
+            // Update document click listener to hide context menu
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.context-menu')) {
+                    hideContextMenu();
+                }
+            });
+
+            // Prevent default context menu on event cards
+            document.addEventListener('contextmenu', function(e) {
+                if (e.target.closest('.event-card')) {
+                    e.preventDefault();
+                }
+            });
         });
     </script>
 </head>
@@ -404,6 +465,18 @@
             <button type="submit">Create Event</button>
         </form>
         <div id="events-container"></div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu">
+        <div class="context-menu-item" data-action="edit">
+            <span class="context-menu-icon">✏️</span>
+            Edit
+        </div>
+        <div class="context-menu-item" data-action="delete">
+            <span class="context-menu-icon">🗑️</span>
+            Delete
+        </div>
     </div>
 
     <!-- Modal -->
