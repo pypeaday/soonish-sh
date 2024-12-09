@@ -8,8 +8,8 @@ Soonish is a sleek web application that helps you track upcoming events with bea
 - **Create Events**: Add new events with custom names, target dates, and messages
 - **Visual Countdowns**: Each event displays a live countdown showing days, hours, minutes, and seconds
 - **Smart Sorting**: Events are automatically sorted by time remaining, with closest events first
-- **Delete Events**: Easily remove events you no longer need
-- **Event Details**: Click any event to view full details in a modal window
+- **Context Menu**: Right-click any event to edit or delete it
+- **Event Details**: Click any event to view full details
 
 ### Image Integration
 - **Event Images**: Each event can have an associated image
@@ -19,9 +19,9 @@ Soonish is a sleek web application that helps you track upcoming events with bea
 
 ### User Interface
 - **Modern Design**: Clean, modern interface with a dark theme
+- **Theme Options**: Choose between Gruvbox, Nord, and Tokyo Night themes
 - **Responsive Layout**: Works well on different screen sizes
 - **Interactive Elements**: Hover effects and smooth transitions
-- **Modal Windows**: Detailed event view in modal overlays
 
 ### Technical Features
 - **Real-time Updates**: Countdowns update in real-time
@@ -30,6 +30,35 @@ Soonish is a sleek web application that helps you track upcoming events with bea
 - **Error Handling**: Graceful handling of image loading errors with fallbacks
 
 ## Getting Started
+
+### Using Docker (Recommended)
+
+1. Make sure you have Docker and Docker Compose installed on your system.
+
+2. Clone the repository and navigate to the project directory:
+```bash
+git clone https://github.com/yourusername/soonish.git
+cd soonish
+```
+
+3. Configure the environment (optional):
+```bash
+cp .env.example .env
+```
+Edit the `.env` file to change the host port (default is 8000)
+
+4. Start the application using Docker Compose:
+```bash
+docker compose up
+```
+
+5. Open your browser and navigate to `http://localhost:8000` (or your configured port)
+
+The application will automatically reload when you make changes to the code.
+
+### Manual Installation
+
+If you prefer not to use Docker, you can run the application directly:
 
 1. Install the required dependencies:
 ```bash
@@ -51,15 +80,44 @@ uvicorn app:app --reload
    - (Optional) Add a message and select an image
    - Click "Create Event"
 
-2. **Viewing Events**:
-   - All events are displayed on the main page
-   - Click any event to view full details
-   - Countdowns update automatically
+2. **Managing Events**:
+   - Events are automatically sorted by time remaining
+   - Left-click an event to view details
+   - Right-click an event to edit or delete it
+   - Events with passed target dates will show "Time's up!"
 
-3. **Deleting Events**:
-   - Open the event details
-   - Click the "Delete" button
-   - Confirm deletion when prompted
+3. **Customizing the Look**:
+   - Use the theme switcher in the top-right to change the application theme
+   - Choose from Gruvbox, Nord, or Tokyo Night themes
+
+## Development
+
+### Project Structure
+```
+soonish/
+├── app/
+│   └── templates/
+│       └── index.html
+├── static/
+│   └── styles.css
+├── app.py
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
+└── requirements.txt
+```
+
+### Environment Variables
+
+- `HOST_PORT`: The port number on your host machine (default: 8000)
+
+### Docker Commands
+
+- Start the application: `docker compose up`
+- Rebuild the container: `docker compose up --build`
+- Stop the application: `docker compose down`
+- View logs: `docker compose logs -f`
+- Run on a different port: `HOST_PORT=3000 docker compose up`
 
 ## Contributing
 
