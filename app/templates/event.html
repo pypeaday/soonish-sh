@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/static/styles.css" rel="stylesheet">
+    <title>{{ event.name }}</title>
+    <script>
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'gruvbox';
+            setTheme(savedTheme);
+            document.getElementById('theme-select').value = savedTheme;
+        }
+
+        document.addEventListener('DOMContentLoaded', initTheme);
+    </script>
+</head>
+<body>
+    <div class="theme-switcher">
+        <select id="theme-select" onchange="setTheme(this.value)">
+            <option value="gruvbox">Gruvbox</option>
+            <option value="nord">Nord</option>
+            <option value="tokyonight">Tokyo Night</option>
+        </select>
+    </div>
+
+    <div class="container fade-in">
+        <div class="event-container">
+            <h1>{{ event.name }}</h1>
+            <img class="event-image" src="{{ event.image_url }}" alt="Event Image">
+            <p class="event-message">{{ event.message }}</p>
+            <p>Time Remaining: <span id="countdown"></span></p>
+            <a href="/" style="text-align: center; margin-top: 1rem;">← Back to Events</a>
+        </div>
+    </div>
+
+    <script>
+        const targetTime = new Date("{{ event.target_time }}").getTime();
+        const countdownElement = document.getElementById('countdown');
+
+        const countdownInterval = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = targetTime - now;
+
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            countdownElement.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+
+            if (distance < 0) {
+                clearInterval(countdownInterval);
+                countdownElement.innerHTML = "EXPIRED";
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/static/styles.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <title>Countdown App</title>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        let fp = null;
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            if (fp) {
+                fp.destroy();
+            }
+            initFlatpickr();
+        }
+
+        function initFlatpickr() {
+            if (fp) {
+                fp.destroy();
+            }
+
+            const config = {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                time_24hr: true,
+                minDate: "today",
+                defaultHour: new Date().getHours(),
+                defaultMinute: new Date().getMinutes(),
+                theme: "dark",
+                clickOpens: true,
+                closeOnSelect: false,
+                onReady: function(selectedDates, dateStr, instance) {
+                    // Create button container if it doesn't exist
+                    if (!instance.calendarContainer.querySelector('.flatpickr-buttons')) {
+                        const buttonContainer = document.createElement('div');
+                        buttonContainer.className = 'flatpickr-buttons';
+                        
+                        // Create Done button
+                        const doneButton = document.createElement('button');
+                        doneButton.textContent = 'Done';
+                        doneButton.className = 'flatpickr-done';
+                        doneButton.addEventListener('click', () => {
+                            instance.close();
+                        });
+                        
+                        buttonContainer.appendChild(doneButton);
+                        
+                        // Add button container after time picker
+                        const timePicker = instance.calendarContainer.querySelector('.flatpickr-time');
+                        if (timePicker) {
+                            timePicker.after(buttonContainer);
+                        } else {
+                            instance.calendarContainer.appendChild(buttonContainer);
+                        }
+                    }
+                }
+            };
+            
+            const input = document.getElementById('datetime-picker');
+            if (input) {
+                fp = flatpickr(input, config);
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'gruvbox';
+            setTheme(savedTheme);
+            document.getElementById('theme-select').value = savedTheme;
+        }
+
+        let currentCountdownInterval;
+
+        function showEvent(eventId) {
+            fetch(`/api/events`)
+                .then(response => response.json())
+                .then(events => {
+                    const event = events[eventId];
+                    const modal = document.getElementById('eventModal');
+                    const overlay = document.getElementById('modalOverlay');
+                    const modalContent = document.querySelector('.modal-content');
+                    
+                    modalContent.innerHTML = `
+                        <div class="modal-header">
+                            <h2>${event.name}</h2>
+                            <button class="modal-close" onclick="closeModal()">&times;</button>
+                        </div>
+                        <img class="modal-image" src="${event.image_url}" alt="${event.name}">
+                        <p class="modal-message">${event.message}</p>
+                        <div class="modal-countdown" id="modalCountdown"></div>
+                    `;
+
+                    if (currentCountdownInterval) {
+                        clearInterval(currentCountdownInterval);
+                    }
+
+                    const targetTime = new Date(event.target_time).getTime();
+                    const countdownElement = document.getElementById('modalCountdown');
+
+                    function updateCountdown() {
+                        const now = new Date().getTime();
+                        const distance = targetTime - now;
+
+                        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                        if (distance < 0) {
+                            countdownElement.innerHTML = "EXPIRED";
+                            clearInterval(currentCountdownInterval);
+                        } else {
+                            countdownElement.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+                        }
+                    }
+
+                    updateCountdown();
+                    currentCountdownInterval = setInterval(updateCountdown, 1000);
+
+                    modal.classList.add('active');
+                    overlay.classList.add('active');
+                    document.body.classList.add('modal-open');
+                });
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('eventModal');
+            const overlay = document.getElementById('modalOverlay');
+            
+            modal.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.classList.remove('modal-open');
+
+            if (currentCountdownInterval) {
+                clearInterval(currentCountdownInterval);
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('DOMContentLoaded', function() {
+            const overlay = document.getElementById('modalOverlay');
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    closeModal();
+                }
+            });
+
+            // Close modal on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+
+            initTheme();
+            initFlatpickr();
+        });
+    </script>
+</head>
+<body>
+    <div class="theme-switcher">
+        <select id="theme-select" onchange="setTheme(this.value)">
+            <option value="gruvbox">Gruvbox</option>
+            <option value="nord">Nord</option>
+            <option value="tokyonight">Tokyo Night</option>
+        </select>
+    </div>
+
+    <div class="container fade-in">
+        <h1>Countdown Events</h1>
+        <form action="/create_event" method="post">
+            <div class="form-group">
+                <input type="text" name="name" placeholder="Event Name" required>
+            </div>
+            <div class="form-group datetime-group">
+                <input type="text" id="datetime-picker" name="target_time" placeholder="Select Date and Time" required>
+                <span class="calendar-icon">📅</span>
+            </div>
+            <div class="form-group">
+                <input type="text" name="image_url" placeholder="Image URL" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="message" placeholder="Encouraging Message" required>
+            </div>
+            <button type="submit">Create Event</button>
+        </form>
+        <ul>
+            {% for event in events %}
+            <li>
+                <a href="#" onclick="showEvent({{ loop.index0 }}); return false;">{{ event.name }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Modal -->
+    <div id="modalOverlay" class="modal-overlay"></div>
+    <div id="eventModal" class="modal">
+        <div class="modal-content"></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,437 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root[data-theme="gruvbox"] {
+    --bg-primary: #282828;
+    --bg-secondary: #3c3836;
+    --fg-primary: #ebdbb2;
+    --fg-secondary: #a89984;
+    --accent: #b8bb26;
+    --accent-secondary: #fe8019;
+}
+
+:root[data-theme="nord"] {
+    --bg-primary: #2e3440;
+    --bg-secondary: #3b4252;
+    --fg-primary: #eceff4;
+    --fg-secondary: #d8dee9;
+    --accent: #88c0d0;
+    --accent-secondary: #5e81ac;
+}
+
+:root[data-theme="tokyonight"] {
+    --bg-primary: #1a1b26;
+    --bg-secondary: #24283b;
+    --fg-primary: #c0caf5;
+    --fg-secondary: #a9b1d6;
+    --accent: #7aa2f7;
+    --accent-secondary: #bb9af7;
+}
+
+/* Default theme (gruvbox) */
+:root {
+    --bg-primary: #282828;
+    --bg-secondary: #3c3836;
+    --fg-primary: #ebdbb2;
+    --fg-secondary: #a89984;
+    --accent: #b8bb26;
+    --accent-secondary: #fe8019;
+}
+
+/* Apply theme colors */
+body {
+    background-color: var(--bg-primary);
+    color: var(--fg-primary);
+    margin: 0;
+    padding: 1rem;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.theme-switcher {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    background-color: var(--bg-secondary);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--accent);
+    z-index: 1000;
+}
+
+.theme-switcher select {
+    background-color: var(--bg-secondary);
+    color: var(--fg-primary);
+    border: 1px solid var(--accent);
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+/* Style form elements */
+form {
+    background-color: var(--bg-secondary);
+    padding: 1.25rem;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    max-width: 100%;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+input {
+    background-color: var(--bg-primary);
+    color: var(--fg-primary);
+    border: 1px solid var(--accent);
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    border-radius: 0.25rem;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 0.875rem;
+}
+
+button {
+    background-color: var(--accent);
+    color: var(--bg-primary);
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.875rem;
+    width: 100%;
+}
+
+button:hover {
+    background-color: var(--accent-secondary);
+}
+
+/* Style event list */
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+li {
+    background-color: var(--bg-secondary);
+    margin: 0.5rem 0;
+    padding: 0.75rem 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--accent);
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+    display: block;
+    width: 100%;
+}
+
+a:hover {
+    color: var(--accent-secondary);
+}
+
+/* Event page specific styles */
+.event-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.event-image {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    margin: 1rem auto;
+    display: block;
+    border-radius: 0.25rem;
+}
+
+.event-message {
+    margin: 1rem 0;
+    font-size: 1.125rem;
+    color: var(--fg-secondary);
+}
+
+#countdown {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent);
+}
+
+/* Modal styles */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    z-index: 1001;
+    max-width: 90%;
+    width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal.active,
+.modal-overlay.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    width: auto;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: var(--accent);
+    background: none;
+}
+
+.modal-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 0.25rem;
+    margin: 1rem 0;
+}
+
+.modal-message {
+    color: var(--fg-secondary);
+    margin: 1rem 0;
+    font-size: 1.125rem;
+    line-height: 1.5;
+}
+
+.modal-countdown {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent);
+    margin: 1rem 0;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    body {
+        padding: 0.5rem;
+    }
+
+    .container {
+        padding: 0.5rem;
+    }
+
+    .theme-switcher {
+        top: 0.5rem;
+        right: 0.5rem;
+    }
+
+    form {
+        padding: 1rem;
+    }
+
+    button {
+        padding: 0.75rem 1rem;
+    }
+
+    .event-container {
+        margin: 1rem auto;
+    }
+
+    .modal {
+        width: 95%;
+        padding: 1rem;
+    }
+    
+    .modal-image {
+        max-height: 200px;
+    }
+}
+
+/* Typography */
+h1 {
+    font-size: 1.5rem;
+    margin: 1rem 0;
+    color: var(--accent);
+    text-align: center;
+}
+
+/* DateTime picker styles */
+.datetime-group {
+    position: relative;
+}
+
+.calendar-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 1.2rem;
+    pointer-events: none;
+}
+
+/* Flatpickr customization */
+.flatpickr-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.flatpickr-buttons {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px;
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--accent);
+}
+
+.flatpickr-done {
+    background-color: var(--accent) !important;
+    color: var(--bg-primary) !important;
+    padding: 6px 16px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    border: none !important;
+    transition: background-color 0.2s !important;
+    width: auto !important;
+    margin: 0 !important;
+}
+
+.flatpickr-done:hover {
+    background-color: var(--accent-secondary) !important;
+}
+
+.flatpickr-calendar {
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid var(--accent) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    margin-top: 4px !important;
+}
+
+.flatpickr-calendar.dark {
+    background-color: var(--bg-secondary) !important;
+}
+
+.flatpickr-months {
+    background-color: var(--bg-secondary) !important;
+}
+
+.flatpickr-month {
+    color: var(--fg-primary) !important;
+}
+
+.flatpickr-weekday {
+    color: var(--accent) !important;
+}
+
+.flatpickr-day {
+    color: var(--fg-primary) !important;
+    background-color: var(--bg-secondary) !important;
+}
+
+.flatpickr-day:hover {
+    background-color: var(--accent) !important;
+    color: var(--bg-primary) !important;
+}
+
+.flatpickr-day.selected {
+    background-color: var(--accent) !important;
+    color: var(--bg-primary) !important;
+}
+
+.flatpickr-day.today {
+    border-color: var(--accent) !important;
+}
+
+.flatpickr-time {
+    background-color: var(--bg-secondary) !important;
+}
+
+.flatpickr-time input {
+    color: var(--fg-primary) !important;
+}
+
+.flatpickr-time .flatpickr-am-pm {
+    color: var(--fg-primary) !important;
+}
+
+.numInputWrapper:hover {
+    background-color: transparent !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+    background-color: var(--bg-secondary) !important;
+    color: var(--fg-primary) !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months option {
+    background-color: var(--bg-secondary) !important;
+}
+
+.flatpickr-time input:hover,
+.flatpickr-time .flatpickr-am-pm:hover {
+    background-color: var(--accent) !important;
+    color: var(--bg-primary) !important;
+}
+
+input[data-input] {
+    cursor: pointer;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
