@@ -65,18 +65,12 @@ git clone https://github.com/yourusername/soonish.git
 cd soonish
 ```
 
-3. Configure the environment (optional):
-```bash
-cp .env.example .env
-```
-Edit the `.env` file to change the host port (default is 8000)
-
-4. Start the application using Docker Compose:
+3. Start the application using Docker Compose:
 ```bash
 docker compose up
 ```
 
-5. Open your browser and navigate to `http://localhost:8000` (or your configured port)
+4. Open your browser and navigate to `http://localhost:8000`
 
 The application will automatically reload when you make changes to the code.
 
@@ -86,12 +80,12 @@ If you prefer not to use Docker, you can run the application directly:
 
 1. Install the required dependencies:
 ```bash
-pip install fastapi uvicorn jinja2 python-multipart
+pip install -r requirements.txt
 ```
 
 2. Run the application:
 ```bash
-uvicorn app:app --reload
+python app.py
 ```
 
 3. Open your browser and navigate to `http://localhost:8000`
@@ -99,7 +93,6 @@ uvicorn app:app --reload
 ## Usage
 
 1. **Creating an Event**:
-   - Click the "Add Event" button
    - Fill in the event name and target date
    - (Optional) Add a message and select an image
    - Click "Create Event"
@@ -120,20 +113,22 @@ uvicorn app:app --reload
 ```
 soonish/
 ├── app/
-│   └── templates/
-│       └── index.html
-├── static/
-│   └── styles.css
+│   ├── __init__.py
+│   ├── main.py
+│   ├── database.py
+│   ├── templates/
+│   │   └── index.html
+│   └── static/
+│       └── styles.css
 ├── app.py
 ├── Dockerfile
 ├── docker-compose.yml
-├── .env.example
 └── requirements.txt
 ```
 
 ### Environment Variables
 
-- `SOONISH_PORT`: The port number on your host machine (default: 8000)
+- `SOONISH_PORT`: The port number to run the application on (default: 8000)
 
 ### Docker Commands
 
