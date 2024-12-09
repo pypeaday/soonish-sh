@@ -2,6 +2,30 @@
 
 Soonish is a sleek web application that helps you track upcoming events with beautiful visual countdowns. Built with FastAPI and modern web technologies, it provides an intuitive interface for managing your important dates and events.
 
+## Screenshots
+
+### Themes
+Choose from three beautiful themes to match your style:
+
+#### Gruvbox Theme
+[Screenshot of main interface with Gruvbox theme]
+
+#### Nord Theme
+[Screenshot of main interface with Nord theme]
+
+#### Tokyo Night Theme
+[Screenshot of main interface with Tokyo Night theme]
+
+### Event Cards
+Smart, compact event cards show you what matters:
+
+[Screenshot of event cards showing different states: upcoming event, nearly due event, and passed event]
+
+### Event Backgrounds
+Personalize your events with beautiful backgrounds:
+
+[Screenshot of event detail view showing background image integration]
+
 ## Features
 
 ### Event Management
