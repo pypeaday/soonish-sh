@@ -1,6 +1,6 @@
-# Soonish - Event Countdown Application
+# Soonish Self Hosted - Event Countdown Application
 
-Soonish is a sleek web application that helps you track upcoming events with beautiful visual countdowns. Built with FastAPI and modern web technologies, it provides an intuitive interface for managing your important dates and events.
+Soonish-sh is a sleek web application that helps you track upcoming events with beautiful visual countdowns. Built with FastAPI and modern web technologies, it provides an intuitive interface for managing your important dates and events.
 
 ## Screenshots
 
@@ -61,8 +61,8 @@ Personalize your events with beautiful backgrounds:
 
 2. Clone the repository and navigate to the project directory:
 ```bash
-git clone https://github.com/yourusername/soonish.git
-cd soonish
+git clone https://github.com/pypeaday/soonish-sh.git
+cd soonish-sh
 ```
 
 3. Start the application using Docker Compose:
@@ -111,7 +111,7 @@ python app.py
 
 ### Project Structure
 ```
-soonish/
+soonish-sh/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py

@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  web:
+  soonish:
     build: .
     ports:
       - "${SOONISH_PORT:-8000}:8000"
