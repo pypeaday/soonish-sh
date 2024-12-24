@@ -2,6 +2,10 @@
 
 Soonish-sh is a sleek web application that helps you track upcoming events with beautiful visual countdowns. Built with FastAPI and modern web technologies, it provides an intuitive interface for managing your important dates and events.
 
+## TODOs
+
+This app was mostly built with windsurf. I've started using cline more, but when my windsurf credits renew I'd like to polish this up.
+
 ## Screenshots
 
 ### Themes
