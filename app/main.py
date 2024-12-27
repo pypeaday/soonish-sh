@@ -100,8 +100,8 @@ async def create_event(
 @app.get("/api/events")
 async def get_events(db: Session = Depends(get_db)):
     events = db.query(DBEvent).all()
-    logger.info(f"Found {len(events)} events in database")
-    return [{"id": event.id, **event.to_dict()} for event in events]
+    logger.info(f"Returning {len(events)} events from database")
+    return [event.to_dict() for event in events]
 
 @app.get("/api/events/{event_id}")
 async def get_event(event_id: int, db: Session = Depends(get_db)):
@@ -154,7 +154,7 @@ async def delete_event(event_id: int, db: Session = Depends(get_db)):
 
 @app.get("/random_images")
 async def get_random_images():
-    photos = api.photo.random(count=2)
+    photos = api.photo.random(count=1)
     return [{
         "urls": {
             "small": photo.urls.small,
