@@ -428,7 +428,8 @@
        } 
 
         function closeEditModal() {
-            document.getElementById('editModal').classList.remove('show');
+            const editModal = document.getElementById('editModal');
+            editModal.classList.add('hidden');  // Add 'hidden' instead of removing 'show'
             document.getElementById('edit-form').reset();
         }
         async function loadRandomImages() {
