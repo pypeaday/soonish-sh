@@ -1,9 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/static/styles.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'accent': '#646cff',
+                        'accent-hover': '#747bff',
+                    }
+                }
+            }
+        }
+    </script>
     <title>{{ event.name }}</title>
     <script>
         function setTheme(theme) {
@@ -20,44 +34,60 @@
         document.addEventListener('DOMContentLoaded', initTheme);
     </script>
 </head>
+
 <body>
-    <div class="theme-switcher">
-        <select id="theme-select" onchange="setTheme(this.value)">
-            <option value="gruvbox">Gruvbox</option>
-            <option value="nord">Nord</option>
-            <option value="tokyonight">Tokyo Night</option>
-        </select>
-    </div>
 
-    <div class="container fade-in">
-        <div class="event-container">
-            <h1>{{ event.name }}</h1>
-            <img class="event-image" src="{{ event.image_url }}" alt="Event Image">
-            <p class="event-message">{{ event.message }}</p>
-            <p>Time Remaining: <span id="countdown"></span></p>
-            <a href="/" style="text-align: center; margin-top: 1rem;">← Back to Events</a>
-        </div>
-    </div>
+    <body class="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+        <header class="fixed top-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-50">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <a href="/" class="text-xl hover:text-accent">← Back to Events</a>
+                <div class="flex items-center gap-4">
+                    <button onclick="setTheme('light')" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                        ☀️
+                    </button>
+                    <button onclick="setTheme('dark')" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                        🌙
+                    </button>
+                </div>
+            </div>
+        </header>
 
-    <script>
-        const targetTime = new Date("{{ event.target_time }}").getTime();
-        const countdownElement = document.getElementById('countdown');
+        <main class="container mx-auto px-4 pt-24 pb-8">
+            <div class="max-w-4xl mx-auto">
+                <div class="relative rounded-lg overflow-hidden">
+                    <img class="w-full h-96 object-cover" src="{{ event.image_url }}" alt="{{ event.name }}">
+                    <div class="absolute inset-0 bg-black bg-opacity-40"></div>
+                    <div class="absolute inset-0 p-8 flex flex-col justify-between text-white">
+                        <h1 class="text-4xl font-bold">{{ event.name }}</h1>
+                        <div class="space-y-4">
+                            <p class="text-xl">{{ event.message }}</p>
+                            <p class="text-2xl font-medium">Time Remaining: <span id="countdown"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
 
-        const countdownInterval = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = targetTime - now;
+        <script>
+            const targetTime = new Date("{{ event.target_time }}").getTime();
+            const countdownElement = document.getElementById('countdown');
 
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            const countdownInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = targetTime - now;
 
-            countdownElement.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            if (distance < 0) {
-                clearInterval(countdownInterval);
-                countdownElement.innerHTML = "EXPIRED";
-            }
-        }, 1000);
-    </script>
-</body>
+                countdownElement.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+
+                if (distance < 0) {
+                    clearInterval(countdownInterval);
+                    countdownElement.innerHTML = "EXPIRED";
+                }
+            }, 1000);
+        </script>
+    </body>
+
 </html>

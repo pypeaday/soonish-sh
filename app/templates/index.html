@@ -4,7 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/static/styles.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'accent': '#646cff',
+                        'accent-hover': '#747bff',
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
     <title>soonish.sh</title>
@@ -59,66 +72,89 @@
         }
 
         function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
             localStorage.setItem('theme', theme);
             if (fp) {
                 fp.destroy();
             }
             initFlatpickr();
         }
+        function createEventCard(event) {
+            const card = document.createElement('div');
+            card.className = 'relative bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-6';
+            card.dataset.eventId = event.id;
 
-        function initFlatpickr() {
-            if (fp) {
-                fp.destroy();
-            }
+            // Background image with overlay
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'relative h-48';
 
-            const config = {
-                enableTime: true,
-                dateFormat: "Y-m-d H:i",
-                time_24hr: true,
-                minDate: "today",
-                defaultHour: new Date().getHours(),
-                defaultMinute: new Date().getMinutes(),
-                theme: "dark",
-                clickOpens: true,
-                closeOnSelect: false,
-                onReady: function (selectedDates, dateStr, instance) {
-                    // Create button container if it doesn't exist
-                    if (!instance.calendarContainer.querySelector('.flatpickr-buttons')) {
-                        const buttonContainer = document.createElement('div');
-                        buttonContainer.className = 'flatpickr-buttons';
+            const img = document.createElement('img');
+            img.src = event.image_url;
+            img.alt = event.name;
+            img.className = 'w-full h-full object-cover';
 
-                        // Create Done button
-                        const doneButton = document.createElement('button');
-                        doneButton.textContent = 'Done';
-                        doneButton.className = 'flatpickr-done';
-                        doneButton.addEventListener('click', () => {
-                            instance.close();
-                        });
+            const overlay = document.createElement('div');
+            overlay.className = 'absolute inset-0 bg-black bg-opacity-40';
 
-                        buttonContainer.appendChild(doneButton);
+            imageContainer.appendChild(img);
+            imageContainer.appendChild(overlay);
 
-                        // Add button container after time picker
-                        const timePicker = instance.calendarContainer.querySelector('.flatpickr-time');
-                        if (timePicker) {
-                            timePicker.after(buttonContainer);
-                        } else {
-                            instance.calendarContainer.appendChild(buttonContainer);
-                        }
-                    }
-                }
-            };
+            // Content container
+            const content = document.createElement('div');
+            content.className = 'absolute inset-0 p-6 flex flex-col justify-between text-white';
 
-            const input = document.getElementById('datetime-picker');
-            if (input) {
-                fp = flatpickr(input, config);
-            }
+            // Header with name
+            const header = document.createElement('div');
+            header.className = 'flex justify-between items-start';
+
+            const name = document.createElement('h2');
+            name.className = 'text-2xl font-bold';
+            name.textContent = event.name;
+
+            const contextButton = document.createElement('button');
+            contextButton.className = 'p-2 hover:bg-white/10 rounded-full transition-colors';
+            contextButton.innerHTML = '⋮';
+            contextButton.onclick = (e) => showContextMenu(e, event.id);
+
+            header.appendChild(name);
+            header.appendChild(contextButton);
+
+            // Footer with countdown and message
+            const footer = document.createElement('div');
+            footer.className = 'space-y-2';
+
+            const countdown = document.createElement('div');
+            countdown.className = 'text-xl font-medium countdown';
+            countdown.dataset.targetTime = event.target_time;
+
+            const message = document.createElement('p');
+            message.className = 'text-sm opacity-90';
+            message.textContent = event.message;
+
+            footer.appendChild(countdown);
+            footer.appendChild(message);
+
+            content.appendChild(header);
+            content.appendChild(footer);
+
+            card.appendChild(imageContainer);
+            card.appendChild(content);
+
+            return card;
         }
 
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'gruvbox';
-            setTheme(savedTheme);
-            document.getElementById('theme-select').value = savedTheme;
+        function initFlatpickr() {
+            const isDark = document.documentElement.classList.contains('dark');
+            fp = flatpickr("#datetime-picker", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                minDate: "today",
+                theme: isDark ? "dark" : "light"
+            });
         }
 
         function formatCountdown(distance) {
@@ -135,7 +171,27 @@
 
             return parts.join(' ');
         }
+        function showModal(event) {
+            const modal = document.getElementById('eventModal');
+            const content = modal.querySelector('.modal-content');
 
+            content.innerHTML = `
+        <div class="relative h-96">
+            <img src="${event.image_url}" alt="${event.name}" class="w-full h-full object-cover rounded-lg">
+            <div class="absolute inset-0 bg-black bg-opacity-40 rounded-lg"></div>
+            <div class="absolute inset-0 p-8 flex flex-col justify-between text-white">
+                <h2 class="text-4xl font-bold">${event.name}</h2>
+                <div class="space-y-4">
+                    <div class="text-3xl font-medium countdown" data-target-time="${event.target_time}"></div>
+                    <p class="text-xl">${event.message}</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+            modal.classList.remove('hidden');
+            updateCountdown();
+        }
         function showEvent(eventId) {
             currentEventId = eventId;
             fetch(`/api/events`)
@@ -154,13 +210,6 @@
                     modalContent.style.backgroundImage = `url('${event.image_url}')`;
 
                     modalContent.innerHTML = `
-                        <div class="modal-header">
-                            <h2>${event.name}</h2>
-                            <div class="modal-actions">
-                                <button class="modal-delete" onclick="deleteEvent(${event.id})">Delete</button>
-                                <button class="modal-close" onclick="closeModal()">&times;</button>
-                            </div>
-                        </div>
                         <p class="modal-message">${event.message}</p>
                         <div class="modal-countdown" id="modalCountdown"></div>
                         <div class="modal-target-time">Target: ${new Date(event.target_time).toLocaleString()}</div>
@@ -629,106 +678,176 @@
                 reader.readAsDataURL(file);
             }
         });
-
+        // Initialize theme
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+        });
     </script>
 </head>
 
-// You might want to remove or update the existing showImagePicker function
-// since we're not using it anymore
-</script>
+
 </head>
 
-<body>
-    <div class="theme-switcher">
-        <select id="theme-select" onchange="setTheme(this.value)">
-            <option value="gruvbox">Gruvbox</option>
-            <option value="nord">Nord</option>
-            <option value="tokyonight">Tokyo Night</option>
-        </select>
-    </div>
+<body class="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <header class="fixed top-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="/" class="text-2xl font-bold hover:text-accent">soonish.sh</a>
+                <button onclick="createEvent()"
+                    class="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg transition-colors">
+                    Create Event
+                </button>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="setTheme('light')" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                    ☀️
+                </button>
+                <button onclick="setTheme('dark')" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                    🌙
+                </button>
+            </div>
+        </div>
+    </header>
 
-    <div class="container fade-in">
-        <h1>soonish.sh</h1>
-        <form id="event-form" action="/create_event" method="post">
-            <div class="form-group">
-                <input type="text" name="name" placeholder="Event Name" required>
-            </div>
-            <div class="form-group datetime-group">
-                <input type="text" id="datetime-picker" name="target_time" placeholder="Select Date and Time" required>
-                <span class="calendar-icon">📅</span>
-            </div>
-            <div class="form-group">
-                <label for="image_url">Background Image</label>
-                <div class="image-selection">
-                    <button type="button" onclick="loadRandomImages()" class="unsplash-button">Get Random Unsplash
-                        Image</button>
-                    <div class="random-images-grid">
-                        <!-- Images will be populated here via JavaScript -->
-                    </div>
-                    <div class="image-upload">
-                        <input type="file" id="custom-image" accept="image/*">
-                        <span>Or upload your own image</span>
+    <main class="container mx-auto px-4 pt-24 pb-8">
+        <div class="container">
+            <h1>soonish.sh</h1>
+            <form id="create-form"
+                class="max-w-2xl mx-auto space-y-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="space-y-2">
+                    <label for="name" class="block text-sm font-medium">Event Name</label>
+                    <input type="text" id="name" name="name" placeholder="Event Name" required
+                        class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent">
+                </div>
+
+                <div class="space-y-2">
+                    <label for="datetime-picker" class="block text-sm font-medium">Date and Time</label>
+                    <div class="relative">
+                        <input type="text" id="datetime-picker" name="target_time" placeholder="Select Date and Time"
+                            required
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent">
+                        <span class="absolute right-4 top-1/2 -translate-y-1/2">📅</span>
                     </div>
                 </div>
-                <input type="hidden" id="image_url" name="image_url">
-            </div>
-            <div class="form-group">
-                <input type="text" name="message" placeholder="Encouraging Message" required>
-            </div>
-            <button type="submit">Create Event</button>
-        </form>
-        <div id="events-container"></div>
-    </div>
-    <div id="events-container"></div>
 
-    <!-- Context Menu -->
-    <div id="contextMenu" class="context-menu">
-        <div class="context-menu-item" data-action="edit">
-            <span class="context-menu-icon">✏️</span>
-            Edit
-        </div>
-        <div class="context-menu-item" data-action="delete">
-            <span class="context-menu-icon">🗑️</span>
-            Delete
-        </div>
-    </div>
-
-    <!-- Modal -->
-    <div id="modalOverlay" class="modal-overlay"></div>
-    <div id="eventModal" class="modal">
-        <div class="modal-content"></div>
-    </div>
-
-    <div id="editModal" class="modal">
-        <div class="modal-overlay"></div>
-        <div class="modal-container">
-            <form id="edit-form" class="event-form">
-                <h2>Edit Event</h2>
-                <input type="text" id="edit-name" name="name" placeholder="Event Name" required>
-                <input type="datetime-local" id="edit-datetime" name="target_time" required>
-                <div class="form-group">
-                    <label for="edit-image-url">Background Image</label>
-                    <div class="image-selection">
-                        <button type="button" onclick="loadRandomImagesForEdit()" class="unsplash-button">Get Random
-                            Unsplash Image</button>
-                        <div class="random-images-grid" id="edit-image-grid">
-                            <!-- Images will be populated here via JavaScript -->
+                <div class="space-y-2">
+                    <label for="image_url" class="block text-sm font-medium">Background Image</label>
+                    <div class="space-y-4">
+                        <button type="button" onclick="loadRandomImages()"
+                            class="w-full px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors">
+                            Get Random Unsplash Image
+                        </button>
+                        <div class="random-images-grid grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <!-- Images will be populated here -->
                         </div>
+                        <div
+                            class="p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center">
+                            <input type="file" id="custom-image" accept="image/*" class="hidden">
+                            <label for="custom-image" class="cursor-pointer">
+                                Or upload your own image
+                            </label>
+                        </div>
+                        <input type="hidden" id="image_url" name="image_url">
                     </div>
-                    <input type="text" id="edit-image-url" name="image_url" placeholder="Image URL"
-                        oninput="previewImage(this.value)">
                 </div>
-                <textarea id="edit-message" name="message" placeholder="Event Message" required></textarea>
-                <div id="edit-image-preview" class="image-preview">
-                    <img src="" alt="Preview">
+
+                <div class="space-y-2">
+                    <label for="message" class="block text-sm font-medium">Message</label>
+                    <input type="text" name="message" placeholder="Encouraging Message" required
+                        class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent">
                 </div>
-                <div class="form-actions">
-                    <button type="submit">Update Event</button>
-                    <button type="button" onclick="closeEditModal()">Cancel</button>
-                </div>
+
+                <button type="submit"
+                    class="w-full px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors">
+                    Create Event
+                </button>
             </form>
+            <div id="events-container"></div>
         </div>
-    </div>
+        <div id="events-container"></div>
+
+        <!-- Context Menu -->
+        <div id="contextMenu"
+            class="hidden fixed bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] z-50">
+            <div class="context-menu-item cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                data-action="edit">
+                <span class="context-menu-icon">✏️</span>
+                Edit
+            </div>
+            <div class="context-menu-item cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                data-action="delete">
+                <span class="context-menu-icon">🗑️</span>
+                Delete
+            </div>
+        </div>
+        <!-- Modal -->
+        <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+            <div class="min-h-screen px-4 text-center">
+                <div class="fixed inset-0" onclick="closeModal()"></div>
+                <div
+                    class="inline-block w-full max-w-4xl p-6 my-8 text-left align-middle bg-white dark:bg-gray-800 rounded-lg shadow-xl transform transition-all">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+        </div>
+        <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+            <div class="min-h-screen px-4 text-center">
+                <div class="fixed inset-0" onclick="closeEditModal()"></div>
+                <div
+                    class="inline-block w-full max-w-2xl p-6 my-8 text-left align-middle bg-white dark:bg-gray-800 rounded-lg shadow-xl transform transition-all">
+                    <form id="edit-form" class="space-y-6">
+                        <h2 class="text-2xl font-bold mb-6">Edit Event</h2>
+
+                        <div class="space-y-2">
+                            <label for="edit-name" class="block text-sm font-medium">Event Name</label>
+                            <input type="text" id="edit-name" name="name" placeholder="Event Name" required
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label for="edit-datetime" class="block text-sm font-medium">Date and Time</label>
+                            <input type="datetime-local" id="edit-datetime" name="target_time" required
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label for="edit-image-url" class="block text-sm font-medium">Background Image</label>
+                            <button type="button" onclick="loadRandomImagesForEdit()"
+                                class="w-full px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors">
+                                Get Random Unsplash Image
+                            </button>
+                            <div id="edit-image-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <!-- Images will be populated here -->
+                            </div>
+                            <input type="text" id="edit-image-url" name="image_url" placeholder="Image URL"
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label for="edit-message" class="block text-sm font-medium">Message</label>
+                            <textarea id="edit-message" name="message" placeholder="Event Message" required
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent"></textarea>
+                        </div>
+
+                        <div id="edit-image-preview" class="mt-4 rounded-lg overflow-hidden">
+                            <img src="" alt="Preview" class="w-full h-48 object-cover">
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button type="submit"
+                                class="flex-1 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors">
+                                Update Event
+                            </button>
+                            <button type="button" onclick="closeEditModal()"
+                                class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 </body>
 
 </html>
