@@ -71,6 +71,13 @@
             }
         }
 
+        // Initialize theme
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+            // Add this line to load events when page loads
+            loadEvents();
+        });
         function setTheme(theme) {
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
@@ -320,54 +327,16 @@
             fetch('/api/events')
                 .then(response => response.json())
                 .then(events => {
-                    console.log('Received events:', events);  // Add this line
                     const container = document.getElementById('events-container');
-                    if (!container) {
-                        console.error('Events container not found!');  // Add this line
-                        return;
-                    }
-
-                    // Sort events by time remaining
-                    const now = new Date().getTime();
-                    events.sort((a, b) => {
-                        const timeA = new Date(a.target_time).getTime() - now;
-                        const timeB = new Date(b.target_time).getTime() - now;
-                        return timeA - timeB;
+                    container.innerHTML = ''; // Clear existing events
+                    events.forEach(event => {
+                        const card = createEventCard(event);
+                        container.appendChild(card);
                     });
-
-                    container.innerHTML = events.map(event => {
-                        console.log('Processing event:', event);  // Add this line
-                        const targetTime = new Date(event.target_time).getTime();
-                        const distance = targetTime - now;
-                        const timeLeft = formatTimeLeft(distance);
-
-                        return `
-                    <div class="event-card" data-event-id="${event.id}">
-                        <div class="event-actions">
-                            <button class="edit-btn" onclick="editEvent(${event.id})">
-                                <span class="icon">✏️</span>
-                            </button>
-                        </div>
-                        <div class="event-content" onclick="showEvent(${event.id})" oncontextmenu="showContextMenu(event, ${event.id}); return false;">
-                            <div class="event-icon">
-                                <img src="${event.image_url}" alt="${event.name}">
-                            </div>
-                            <div class="event-details">
-                                <h3>${event.name}</h3>
-                                <p class="event-message">${event.message}</p>
-                                <p class="time-left">${timeLeft}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                    }).join('');
-                    console.log('Container HTML:', container.innerHTML);  // Add this line
+                    updateCountdown(); // Update all countdowns
                 })
-                .catch(error => {
-                    console.error('Error loading events:', error);  // Add this line
-                });
+                .catch(error => console.error('Error loading events:', error));
         }
-
         function showContextMenu(event, eventId) {
             const contextMenu = document.getElementById('contextMenu');
             contextMenu.style.display = 'block';
@@ -683,6 +652,10 @@
             const savedTheme = localStorage.getItem('theme') || 'light';
             setTheme(savedTheme);
         });
+        function toggleCreateForm() {
+            const form = document.getElementById('create-form');
+            form.classList.toggle('hidden');
+        }
     </script>
 </head>
 
@@ -694,7 +667,7 @@
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-4">
                 <a href="/" class="text-2xl font-bold hover:text-accent">soonish.sh</a>
-                <button onclick="createEvent()"
+                <button onclick="toggleCreateForm()"
                     class="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg transition-colors">
                     Create Event
                 </button>
@@ -712,9 +685,8 @@
 
     <main class="container mx-auto px-4 pt-24 pb-8">
         <div class="container">
-            <h1>soonish.sh</h1>
             <form id="create-form"
-                class="max-w-2xl mx-auto space-y-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                class="max-w-2xl mx-auto space-y-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg hidden">
                 <div class="space-y-2">
                     <label for="name" class="block text-sm font-medium">Event Name</label>
                     <input type="text" id="name" name="name" placeholder="Event Name" required
@@ -758,14 +730,19 @@
                         class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent">
                 </div>
 
-                <button type="submit"
-                    class="w-full px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors">
-                    Create Event
-                </button>
+                <div class="flex gap-4">
+                    <button type="submit"
+                        class="flex-1 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors">
+                        Create Event
+                    </button>
+                    <button type="button" onclick="toggleCreateForm()"
+                        class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                </div>
             </form>
             <div id="events-container"></div>
         </div>
-        <div id="events-container"></div>
 
         <!-- Context Menu -->
         <div id="contextMenu"
