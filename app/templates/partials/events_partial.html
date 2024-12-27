@@ -1,0 +1,60 @@
+<!-- app/templates/events_partial.html -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for event in events %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+         hx-get="/event/{{ event.id }}"
+         hx-target="#modal-content"
+         onclick="document.getElementById('modal').classList.remove('hidden')">
+        
+        {% if event.image_url %}
+        <img src="{{ event.image_url }}" 
+             alt="{{ event.name }}"
+             class="w-full h-48 object-cover">
+        {% else %}
+        <div class="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <span class="text-4xl">🎯</span>
+        </div>
+        {% endif %}
+        
+        <div class="p-4">
+            <h3 class="text-xl font-bold mb-2">{{ event.name }}</h3>
+            
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                <span class="countdown" data-target="{{ event.target_time.isoformat() }}">
+                    {% set time_diff = event.target_time - now %}
+                    {% if time_diff.total_seconds() > 0 %}
+                        {{ time_diff.days }}d {{ (time_diff.seconds // 3600) }}h {{ ((time_diff.seconds % 3600) // 60) }}m
+                    {% else %}
+                        Passed
+                    {% endif %}
+                </span>
+            </div>
+            
+            <p class="text-gray-700 dark:text-gray-300 line-clamp-2">{{ event.message }}</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    function updateCountdowns() {
+        document.querySelectorAll('.countdown').forEach(el => {
+            const target = new Date(el.dataset.target);
+            const now = new Date();
+            const diff = target - now;
+            
+            if (diff > 0) {
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                el.textContent = `${days}d ${hours}h ${minutes}m`;
+            } else {
+                el.textContent = 'Passed';
+            }
+        });
+    }
+    
+    // Update countdowns every minute
+    setInterval(updateCountdowns, 60000);
+    updateCountdowns();
+</script>

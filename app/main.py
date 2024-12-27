@@ -97,61 +97,6 @@ async def create_event(
     
     return {"status": "success", "id": db_event.id}
 
-@app.get("/api/events")
-async def get_events(db: Session = Depends(get_db)):
-    events = db.query(DBEvent).all()
-    logger.info(f"Returning {len(events)} events from database")
-    return [event.to_dict() for event in events]
-
-@app.get("/api/events/{event_id}")
-async def get_event(event_id: int, db: Session = Depends(get_db)):
-    event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    logger.info(f"Found event {event_id} in database")
-    return event.to_dict()
-
-@app.put("/api/events/{event_id}")
-async def update_event(
-    event_id: int,
-    name: str = Form(...),
-    target_time: str = Form(...),
-    image_url: str = Form(""),
-    message: str = Form(...),
-    db: Session = Depends(get_db)
-):
-    event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-
-    # If no image URL provided, keep the existing one or pick a random one
-    if not image_url or image_url.strip() == "":
-        if not event.image_url:
-            image_url = random.choice(DEFAULT_IMAGES)
-        else:
-            image_url = event.image_url
-
-    # Update event fields
-    event.name = name
-    event.target_time = datetime.fromisoformat(target_time)
-    event.image_url = image_url
-    event.message = message
-
-    db.commit()
-    db.refresh(event)
-    logger.info(f"Updated event {event_id} in database")
-    return {"status": "success", "id": event.id}
-
-@app.delete("/api/events/{event_id}")
-async def delete_event(event_id: int, db: Session = Depends(get_db)):
-    event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
-    if event:
-        db.delete(event)
-        db.commit()
-        logger.info(f"Deleted event {event_id} from database")
-        return {"status": "success", "id": event_id}
-    return {"status": "not_found"}
-
 @app.get("/random_images")
 async def get_random_images():
     photos = api.photo.random(count=1)
@@ -163,3 +108,62 @@ async def get_random_images():
         "alt_description": photo.alt_description or "Random image"
     } for photo in photos]
 
+@app.get("/api/events")
+async def get_events(request: Request, db: Session = Depends(get_db)):
+    events = db.query(DBEvent).all()
+    return templates.TemplateResponse(
+        "partials/events_partial.html",
+        {"request": request, "events": events, "now": datetime.now()}
+    )
+
+@app.get("/event/{event_id}")
+async def get_event(event_id: int, request: Request, db: Session = Depends(get_db)):
+    event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return templates.TemplateResponse(
+        "event_edit.html",
+        {"request": request, "event": event}
+    )
+
+@app.put("/event/{event_id}")
+async def update_event(
+    event_id: int,
+    request: Request,
+    name: str = Form(...),
+    target_time: str = Form(...),
+    image_url: str = Form(""),
+    message: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    event.name = name
+    event.target_time = datetime.fromisoformat(target_time)
+    event.image_url = image_url
+    event.message = message
+    
+    db.commit()
+    
+    events = db.query(DBEvent).all()
+    return templates.TemplateResponse(
+        "partials/events_partial.html",
+        {"request": request, "events": events, "now": datetime.now()}
+    )
+
+@app.delete("/event/{event_id}")
+async def delete_event(event_id: int, request: Request, db: Session = Depends(get_db)):
+    event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    db.delete(event)
+    db.commit()
+    
+    events = db.query(DBEvent).all()
+    return templates.TemplateResponse(
+        "partials/events_partial.html",
+        {"request": request, "events": events, "now": datetime.now()}
+    )
