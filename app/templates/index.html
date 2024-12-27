@@ -27,50 +27,37 @@
         let currentCountdownInterval = null;
         let currentEventId = null;
         let eventData = {};
+
         async function loadRandomImagesForEdit() {
-            console.log('Loading random images for edit...');
             const grid = document.getElementById('edit-image-grid');
+            grid.innerHTML = ''; // Clear existing images
 
             try {
-                console.log('Fetching from /random_images');
-                const response = await fetch('/random_images');
+                const response = await fetch('/random-images');
                 const images = await response.json();
-                console.log('Received images:', images);
 
-                // Clear existing images
-                grid.innerHTML = '';
-
-                // Add new images
-                images.forEach(image => {
-                    const div = document.createElement('div');
-                    div.className = 'image-item';
+                images.forEach(imageUrl => {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'relative aspect-w-16 aspect-h-9';
 
                     const img = document.createElement('img');
-                    img.src = image.urls.small;
-                    img.alt = image.alt_description || 'Random image';
-                    img.loading = 'lazy';
-
-                    // Add click handler
-                    const clickHandler = () => {
-                        console.log('Image clicked:', image.urls.regular);
-                        document.getElementById('edit-image-url').value = image.urls.regular;
-
-                        // Update preview
+                    img.src = imageUrl;
+                    img.alt = 'Random background option';
+                    img.className = 'w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-75 transition-opacity';
+                    img.onclick = () => {
+                        document.getElementById('edit-image-url').value = imageUrl;
                         const previewImg = document.querySelector('#edit-image-preview img');
-                        previewImg.src = image.urls.regular;
+                        previewImg.src = imageUrl;
+                        previewImg.style.display = 'block';
                     };
 
-                    div.addEventListener('click', clickHandler);
-                    img.addEventListener('click', clickHandler);
-
-                    div.appendChild(img);
-                    grid.appendChild(div);
+                    imgContainer.appendChild(img);
+                    grid.appendChild(imgContainer);
                 });
             } catch (error) {
                 console.error('Error loading random images:', error);
             }
         }
-
         // Initialize theme
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'light';
@@ -90,10 +77,14 @@
             }
             initFlatpickr();
         }
+
         function createEventCard(event) {
             const card = document.createElement('div');
-            card.className = 'relative bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-6';
+            card.className = 'relative bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-6 cursor-pointer hover:shadow-xl transition-shadow';
             card.dataset.eventId = event.id;
+
+            // Add click handler to the card
+            card.onclick = () => showModal(event);
 
             // Background image with overlay
             const imageContainer = document.createElement('div');
@@ -115,20 +106,9 @@
             content.className = 'absolute inset-0 p-6 flex flex-col justify-between text-white';
 
             // Header with name
-            const header = document.createElement('div');
-            header.className = 'flex justify-between items-start';
-
             const name = document.createElement('h2');
             name.className = 'text-2xl font-bold';
             name.textContent = event.name;
-
-            const contextButton = document.createElement('button');
-            contextButton.className = 'p-2 hover:bg-white/10 rounded-full transition-colors';
-            contextButton.innerHTML = '⋮';
-            contextButton.onclick = (e) => showContextMenu(e, event.id);
-
-            header.appendChild(name);
-            header.appendChild(contextButton);
 
             // Footer with countdown and message
             const footer = document.createElement('div');
@@ -145,7 +125,7 @@
             footer.appendChild(countdown);
             footer.appendChild(message);
 
-            content.appendChild(header);
+            content.appendChild(name);
             content.appendChild(footer);
 
             card.appendChild(imageContainer);
@@ -153,7 +133,6 @@
 
             return card;
         }
-
         function initFlatpickr() {
             const isDark = document.documentElement.classList.contains('dark');
             fp = flatpickr("#datetime-picker", {
@@ -178,78 +157,33 @@
 
             return parts.join(' ');
         }
-        function showModal(event) {
-            const modal = document.getElementById('eventModal');
-            const content = modal.querySelector('.modal-content');
+        async function showEvent(eventId) {
+            try {
+                const response = await fetch(`/api/events/${eventId}`);
+                const event = await response.json();
 
-            content.innerHTML = `
-        <div class="relative h-96">
-            <img src="${event.image_url}" alt="${event.name}" class="w-full h-full object-cover rounded-lg">
-            <div class="absolute inset-0 bg-black bg-opacity-40 rounded-lg"></div>
-            <div class="absolute inset-0 p-8 flex flex-col justify-between text-white">
-                <h2 class="text-4xl font-bold">${event.name}</h2>
-                <div class="space-y-4">
-                    <div class="text-3xl font-medium countdown" data-target-time="${event.target_time}"></div>
-                    <p class="text-xl">${event.message}</p>
-                </div>
-            </div>
-        </div>
-    `;
+                // Update modal content
+                document.getElementById('eventModalTitle').textContent = event.name;
+                document.getElementById('eventModalMessage').textContent = event.message;
+                document.getElementById('eventModalTime').textContent = formatDateTime(event.target_time);
 
-            modal.classList.remove('hidden');
-            updateCountdown();
+                // Update background image if available
+                const modalBackground = document.getElementById('eventModalBackground');
+                if (event.image_url) {
+                    modalBackground.style.backgroundImage = `url(${event.image_url})`;
+                }
+
+                // Show modal
+                document.getElementById('eventModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading event:', error);
+            }
         }
-        function showEvent(eventId) {
-            currentEventId = eventId;
-            fetch(`/api/events`)
-                .then(response => response.json())
-                .then(events => {
-                    const event = events.find(e => e.id === eventId);
-                    if (!event) {
-                        console.error('Event not found');
-                        return;
-                    }
-
-                    const modal = document.getElementById('eventModal');
-                    const overlay = document.getElementById('modalOverlay');
-                    const modalContent = document.querySelector('.modal-content');
-
-                    modalContent.style.backgroundImage = `url('${event.image_url}')`;
-
-                    modalContent.innerHTML = `
-                        <p class="modal-message">${event.message}</p>
-                        <div class="modal-countdown" id="modalCountdown"></div>
-                        <div class="modal-target-time">Target: ${new Date(event.target_time).toLocaleString()}</div>
-                    `;
-
-                    if (currentCountdownInterval) {
-                        clearInterval(currentCountdownInterval);
-                    }
-
-                    const targetTime = new Date(event.target_time).getTime();
-                    const countdownElement = document.getElementById('modalCountdown');
-
-                    function updateCountdown() {
-                        const now = new Date().getTime();
-                        const distance = targetTime - now;
-
-                        if (distance < 0) {
-                            countdownElement.innerHTML = "Time's up!";
-                            clearInterval(currentCountdownInterval);
-                        } else {
-                            countdownElement.innerHTML = formatCountdown(distance);
-                        }
-                    }
-
-                    updateCountdown();
-                    currentCountdownInterval = setInterval(updateCountdown, 1000);
-
-                    modal.classList.add('active');
-                    overlay.classList.add('active');
-                    document.body.classList.add('modal-open');
-                });
+        function editEventFromModal() {
+            const eventId = document.querySelector('[data-event-id]').dataset.eventId;
+            closeEventModal();
+            editEvent(eventId);
         }
-
         function deleteEvent(eventId) {
             if (confirm('Are you sure you want to delete this event?')) {
                 fetch(`/api/events/${eventId}`, {
@@ -271,39 +205,23 @@
                     });
             }
         }
-
-        function closeModal() {
+        function showModal(event) {
             const modal = document.getElementById('eventModal');
-            const overlay = document.getElementById('modalOverlay');
-
-            modal.classList.remove('active');
-            overlay.classList.remove('active');
-            document.body.classList.remove('modal-open');
-
-            if (currentCountdownInterval) {
-                clearInterval(currentCountdownInterval);
-            }
-        }
-
-        function previewImage(url) {
-            const imagePreview = document.getElementById('image-preview');
-            const image = imagePreview.querySelector('img');
-
-            // If empty, use default image
-            if (!url.trim()) {
-                url = "https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&auto=format&fit=crop";
-                document.getElementById('image-url').value = url;
-            }
-
-            image.classList.remove('error');
-            image.src = url;
-
-            // Handle image load errors
-            image.onerror = function () {
-                image.classList.add('error');
-                image.src = "https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&auto=format&fit=crop";
-                document.getElementById('image-url').value = image.src;
-            };
+            
+            // Set content
+            document.getElementById('eventModalTitle').textContent = event.name;
+            document.getElementById('eventModalMessage').textContent = event.message;
+            
+            // Set background
+            const background = document.getElementById('eventModalBackground');
+            background.style.backgroundImage = `url(${event.image_url})`;
+            
+            // Set time
+            const targetDate = new Date(event.target_time);
+            const timeLeft = formatTimeLeft(targetDate.getTime() - new Date().getTime());
+            document.getElementById('eventModalTime').textContent = timeLeft;
+            
+            modal.classList.remove('hidden');
         }
         function formatTimeLeft(distance) {
             if (distance < 0) {
@@ -337,26 +255,6 @@
                 })
                 .catch(error => console.error('Error loading events:', error));
         }
-        function showContextMenu(event, eventId) {
-            const contextMenu = document.getElementById('contextMenu');
-            contextMenu.style.display = 'block';
-            contextMenu.style.left = event.pageX + 'px';
-            contextMenu.style.top = event.pageY + 'px';
-
-            // Store the event ID for the context menu actions
-            contextMenu.dataset.eventId = eventId;
-
-            // Remove any existing event listeners
-            const existingItems = contextMenu.querySelectorAll('.context-menu-item');
-            existingItems.forEach(item => {
-                item.replaceWith(item.cloneNode(true));
-            });
-
-            // Add new event listeners
-            contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
-                item.addEventListener('click', handleContextMenuAction);
-            });
-        }
 
         function handleContextMenuAction(e) {
             const action = e.currentTarget.dataset.action;
@@ -378,114 +276,120 @@
             const contextMenu = document.getElementById('contextMenu');
             contextMenu.style.display = 'none';
         }
-       async function editEvent(eventId) {
-           try {
-               const response = await fetch(`/api/events/${eventId}`);
-               const event = await response.json();
-       
-               // Format the datetime string for datetime-local input
-               const dateObj = new Date(event.target_time);
-               const formattedDate = dateObj.toISOString().slice(0, 16);
-       
-               // Populate form with event data
-               document.getElementById('edit-name').value = event.name;
-               document.getElementById('edit-datetime').value = formattedDate;
-               document.getElementById('edit-image-url').value = event.image_url;
-               document.getElementById('edit-message').value = event.message;
-       
-               // Show preview if there's an image
-               if (event.image_url) {
-                   const previewImg = document.querySelector('#edit-image-preview img');
-                   previewImg.src = event.image_url;
-                   previewImg.style.display = 'block';
-               }
-       
-               // Show the modal
-               const editModal = document.getElementById('editModal');
-               editModal.classList.remove('hidden');
-       
-               // Add submit handler
-               const form = document.getElementById('edit-form');
-               form.onsubmit = async (e) => {
-                   e.preventDefault();
-                   const formData = new FormData(form);
-                   try {
-                       const response = await fetch(`/api/events/${eventId}`, {
-                           method: 'PUT',
-                           body: formData
-                       });
-                       if (response.ok) {
-                           closeEditModal();
-                           loadEvents();
-                       }
-                   } catch (error) {
-                       console.error('Error updating event:', error);
-                   }
-               };
-           } catch (error) {
-               console.error('Error loading event:', error);
-           }
-       } 
+        async function editEvent(eventId) {
+            try {
+                const response = await fetch(`/api/events/${eventId}`);
+                const event = await response.json();
 
+                // Format the datetime string for datetime-local input
+                const dateObj = new Date(event.target_time);
+                const formattedDate = dateObj.toISOString().slice(0, 16);
+
+                // Populate form with event data
+                document.getElementById('edit-name').value = event.name;
+                document.getElementById('edit-datetime').value = formattedDate;
+                document.getElementById('edit-image-url').value = event.image_url;
+                document.getElementById('edit-message').value = event.message;
+                const cancelButton = document.querySelector('#editModal button[type="button"]');
+                if (cancelButton) {
+                    cancelButton.onclick = closeEditModal;
+                }
+                // Show preview if there's an image
+                if (event.image_url) {
+                    const previewImg = document.querySelector('#edit-image-preview img');
+                    previewImg.src = event.image_url;
+                    previewImg.style.display = 'block';
+                }
+
+                // Show the modal
+                const editModal = document.getElementById('editModal');
+                editModal.classList.remove('hidden');
+
+                // Add submit handler
+                const form = document.getElementById('edit-form');
+                form.onsubmit = async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(form);
+                    try {
+                        const response = await fetch(`/api/events/${eventId}`, {
+                            method: 'PUT',
+                            body: formData
+                        });
+                        if (response.ok) {
+                            closeEditModal();
+                            loadEvents();
+                            showEvent(eventId); // Show the updated event details
+                        }
+                    } catch (error) {
+                        console.error('Error updating event:', error);
+                    }
+                };
+            } catch (error) {
+                console.error('Error loading event:', error);
+            }
+        }
+        function showEvent(eventId) {
+            fetch(`/api/events/${eventId}`)
+                .then(response => response.json())
+                .then(event => {
+                    const modal = document.getElementById('eventModal');
+                    const title = document.getElementById('eventModalTitle');
+                    const message = document.getElementById('eventModalMessage');
+                    const time = document.getElementById('eventModalTime');
+                    const background = document.getElementById('eventModalBackground');
+
+                    // Set content
+                    title.textContent = event.name;
+                    message.textContent = event.message;
+
+                    // Format the time
+                    const targetDate = new Date(event.target_time);
+                    const timeLeft = formatTimeLeft(targetDate.getTime() - new Date().getTime());
+                    time.textContent = timeLeft;
+
+                    // Set background
+                    if (event.image_url) {
+                        background.style.backgroundImage = `url(${event.image_url})`;
+                    }
+
+                    // Show modal
+                    modal.classList.remove('hidden');
+                })
+                .catch(error => console.error('Error loading event:', error));
+        }
+
+        function closeEventModal() {
+            const modal = document.getElementById('eventModal');
+            modal.classList.add('hidden');
+        }
         function closeEditModal() {
             const editModal = document.getElementById('editModal');
             editModal.classList.add('hidden');  // Add 'hidden' instead of removing 'show'
             document.getElementById('edit-form').reset();
         }
-        async function loadRandomImages() {
-            console.log('Loading random images...');
-            const grid = document.getElementById('imageGrid');
-            const button = document.getElementById('showMoreBtn');
-            const icon = button.querySelector('.icon');
-
-            // Start rotation
-            icon.style.transform = 'rotate(360deg)';
-
+        async function loadRandomImagesForEdit() {
             try {
-                console.log('Fetching from /random_images');
-                const response = await fetch('/random_images');
+                const response = await fetch('/random-images');
                 const images = await response.json();
-                console.log('Received images:', images);
 
-                // Clear existing images
-                grid.innerHTML = '';
+                const grid = document.getElementById('edit-image-grid');
+                grid.innerHTML = ''; // Clear existing images
 
-                // Add new images
-                images.forEach(image => {
-                    const div = document.createElement('div');
-                    div.className = 'image-item';
-
+                images.forEach(imageUrl => {
                     const img = document.createElement('img');
-                    img.src = image.urls.small;
-                    img.alt = image.alt_description || 'Random image';
-                    img.loading = 'lazy';
-
-                    // Add click handler to both div and img
-                    const clickHandler = () => {
-                        console.log('Image clicked:', image.urls.regular);
-                        const imageUrlInput = document.querySelector('input[placeholder="Leave empty for a random image"]');
-                        if (imageUrlInput) {
-                            imageUrlInput.value = image.urls.regular;
-                            console.log('Updated input value');
-                        }
-                        closeImagePicker();
+                    img.src = imageUrl;
+                    img.className = 'w-full h-32 object-cover rounded-lg cursor-pointer';
+                    img.onclick = () => {
+                        document.getElementById('edit-image-url').value = imageUrl;
+                        const previewImg = document.querySelector('#edit-image-preview img');
+                        previewImg.src = imageUrl;
+                        previewImg.style.display = 'block';
                     };
-
-                    div.addEventListener('click', clickHandler);
-                    img.addEventListener('click', clickHandler);
-
-                    div.appendChild(img);
-                    grid.appendChild(div);
+                    grid.appendChild(img);
                 });
-
             } catch (error) {
-                console.error('Error loading images:', error);
+                console.error('Error loading random images:', error);
             }
-
-            // Reset rotation after animation
-            setTimeout(() => {
-                icon.style.transform = '';
-            }, 300);
         }
 
         function showMoreImages(event) {
@@ -527,25 +431,32 @@
             }
 
             // Handle form submission
-            const form = document.getElementById('event-form');
-            form.addEventListener('submit', function (e) {
+            document.getElementById('event-form').addEventListener('submit', async function (e) {
                 e.preventDefault();
+                const formData = new FormData(this);
 
-                const formData = new FormData(form);
-
-                fetch('/create_event', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            form.reset();
-                            loadEvents();
-                        }
+                try {
+                    const response = await fetch('/create_event', {
+                        method: 'POST',
+                        body: formData
                     });
-            });
+                    const result = await response.json();
 
+                    if (result.status === 'success') {
+                        this.reset();
+                        await loadEvents(); // Make sure loadEvents is defined and working
+                        closeModal();
+                        // Clear any preview images
+                        const preview = document.querySelector('#image-preview img');
+                        if (preview) {
+                            preview.style.display = 'none';
+                            preview.src = '';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error creating event:', error);
+                }
+            });
             // Close modal when clicking outside
             const overlay = document.getElementById('modalOverlay');
             overlay.addEventListener('click', function (e) {
@@ -555,36 +466,22 @@
             });
             document.getElementById('event-form').addEventListener('submit', async function (e) {
                 e.preventDefault();
-
-                const isEdit = this.dataset.mode === 'edit';
-                const eventId = this.dataset.eventId;
-
                 const formData = new FormData(this);
-                const url = isEdit ? `/api/events/${eventId}` : '/create_event';
-                const method = isEdit ? 'PUT' : 'POST';
 
                 try {
-                    const response = await fetch(url, {
-                        method: method,
+                    const response = await fetch('/create_event', {
+                        method: 'POST',
                         body: formData
                     });
-
                     const result = await response.json();
+
                     if (result.status === 'success') {
-                        // Reset form
                         this.reset();
-                        this.dataset.mode = 'create';
-                        delete this.dataset.eventId;
-
-                        // Update submit button text
-                        const submitBtn = this.querySelector('button[type="submit"]');
-                        submitBtn.textContent = 'Create Event';
-
-                        // Refresh events list
-                        loadEvents();
+                        await loadEvents(); // Make sure to await this
+                        closeModal();
                     }
                 } catch (error) {
-                    console.error('Error saving event:', error);
+                    console.error('Error creating event:', error);
                 }
             });
             // Close modal on escape key
@@ -608,30 +505,58 @@
                 }
             });
         });
-        async function loadRandomImages() {
+        async function loadRandomImages(mode = 'create') {
+            console.log('Loading random images...');
+            const grid = mode === 'create' ?
+                document.querySelector('.random-images-grid') :
+                document.getElementById('edit-image-grid');
+
+            if (!grid) {
+                console.error(`Grid not found for mode: ${mode}`);
+                return;
+            }
+
             try {
-                const response = await fetch('/random_images');
+                const response = await fetch('/random-images');
                 const images = await response.json();
-                const grid = document.querySelector('.random-images-grid');
                 grid.innerHTML = '';
 
                 images.forEach(image => {
                     const img = document.createElement('img');
-                    img.src = image.urls.small;
-                    img.alt = image.alt_description;
-                    img.onclick = () => {
-                        document.getElementById('image_url').value = image.urls.regular;
-                        // Add selection indicator
-                        document.querySelectorAll('.random-images-grid img').forEach(i => i.classList.remove('selected'));
-                        img.classList.add('selected');
+                    img.src = image;
+                    img.alt = 'Random image';
+                    img.className = 'w-full h-32 object-cover rounded-lg cursor-pointer';
+
+                    img.onclick = (e) => {
+                        e.stopPropagation(); // Stop the click from reaching the overlay
+                        const input = mode === 'create' ?
+                            document.getElementById('image_url') :
+                            document.getElementById('edit-image-url');
+
+                        if (input) {
+                            input.value = image;
+                        }
+
+                        const preview = mode === 'create' ?
+                            document.querySelector('#image-preview img') :
+                            document.querySelector('#edit-image-preview img');
+
+                        if (preview) {
+                            preview.src = image;
+                            preview.style.display = 'block';
+                        }
+
+                        if (mode === 'create') {
+                            closeImagePicker();
+                        }
                     };
+
                     grid.appendChild(img);
                 });
             } catch (error) {
                 console.error('Error loading random images:', error);
             }
         }
-
         // Handle custom image upload
         document.getElementById('custom-image')?.addEventListener('change', async (event) => {
             const file = event.target.files[0];
@@ -704,9 +629,10 @@
                 <div class="space-y-2">
                     <label for="image_url" class="block text-sm font-medium">Background Image</label>
                     <div class="space-y-4">
-                        <button type="button" onclick="loadRandomImages()"
-                            class="w-full px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors">
-                            Get Random Unsplash Image
+                        <button type="button"
+                            onclick="event.preventDefault(); event.stopPropagation(); loadRandomImages('edit')"
+                            class="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg">
+                            Random Image
                         </button>
                         <div class="random-images-grid grid grid-cols-2 md:grid-cols-3 gap-4">
                             <!-- Images will be populated here -->
@@ -759,10 +685,32 @@
         <!-- Modal -->
         <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
             <div class="min-h-screen px-4 text-center">
-                <div class="fixed inset-0" onclick="closeModal()"></div>
-                <div
-                    class="inline-block w-full max-w-4xl p-6 my-8 text-left align-middle bg-white dark:bg-gray-800 rounded-lg shadow-xl transform transition-all">
-                    <div class="modal-content"></div>
+                <div class="fixed inset-0" onclick="closeEventModal()"></div>
+                <div onclick="event.stopPropagation()"
+                    class="inline-block w-full max-w-2xl my-8 text-left align-middle rounded-lg shadow-xl transform transition-all overflow-hidden">
+                    <div id="eventModalContent" class="relative">
+                        <!-- Background image -->
+                        <div id="eventModalBackground"
+                            class="absolute inset-0 bg-cover bg-center filter blur-sm opacity-50"></div>
+
+                        <!-- Content -->
+                        <div class="relative bg-white dark:bg-gray-800 p-6">
+                            <h2 id="eventModalTitle" class="text-3xl font-bold mb-4 text-gray-900 dark:text-white"></h2>
+                            <p id="eventModalMessage" class="text-lg mb-4 text-gray-700 dark:text-gray-300"></p>
+                            <p id="eventModalTime" class="text-accent font-semibold"></p>
+
+                            <div class="flex space-x-4 mt-6">
+                                <button onclick="closeEventModal()"
+                                    class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                                    Close
+                                </button>
+                                <button onclick="editEventFromModal()"
+                                    class="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors">
+                                    Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -773,6 +721,22 @@
                 <div
                     class="inline-block w-full max-w-2xl p-6 my-8 text-left align-middle bg-white dark:bg-gray-800 rounded-lg shadow-xl transform transition-all">
                     <h2 class="text-2xl font-bold mb-4">Edit Event</h2>
+                    <div class="space-y-2">
+                        <label for="edit-image-url" class="block text-sm font-medium">Image URL</label>
+                        <button type="button"
+                            onclick="event.preventDefault(); event.stopPropagation(); loadRandomImages('edit')"
+                            class="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg">
+                            Random Image
+                        </button>
+                        <div id="edit-image-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-2">
+                            <!-- Images will be populated here -->
+                        </div>
+                        <input type="url" id="edit-image-url" name="image_url"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent">
+                        <div id="edit-image-preview" class="mt-2">
+                            <img src="" alt="Preview" class="max-h-48 rounded-lg">
+                        </div>
+                    </div>
                     <form id="edit-form" class="space-y-6">
                         <div class="space-y-2">
                             <label for="edit-name" class="block text-sm font-medium">Event Name</label>
@@ -792,14 +756,6 @@
                                 class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent"></textarea>
                         </div>
 
-                        <div class="space-y-2">
-                            <label for="edit-image-url" class="block text-sm font-medium">Image URL</label>
-                            <input type="url" id="edit-image-url" name="image_url"
-                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-accent focus:border-transparent">
-                            <div id="edit-image-preview" class="mt-2">
-                                <img src="" alt="Preview" class="max-h-48 rounded-lg">
-                            </div>
-                        </div>
 
                         <div class="flex gap-4">
                             <button type="submit"
@@ -812,6 +768,38 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+        <!-- Event Details Modal -->
+        <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+            <div class="min-h-screen px-4 text-center">
+                <div class="fixed inset-0" onclick="closeEventModal()"></div>
+                <div
+                    class="inline-block w-full max-w-2xl my-8 text-left align-middle rounded-lg shadow-xl transform transition-all overflow-hidden">
+                    <div id="eventModalContent" class="relative">
+                        <!-- Background image -->
+                        <div id="eventModalBackground"
+                            class="absolute inset-0 bg-cover bg-center filter blur-sm opacity-50"></div>
+
+                        <!-- Content -->
+                        <div class="relative bg-white dark:bg-gray-800 p-6">
+                            <h2 id="eventModalTitle" class="text-3xl font-bold mb-4 text-gray-900 dark:text-white"></h2>
+                            <p id="eventModalMessage" class="text-lg mb-4 text-gray-700 dark:text-gray-300"></p>
+                            <p id="eventModalTime" class="text-accent font-semibold"></p>
+
+                            <div class="flex space-x-4 mt-6">
+                                <button onclick="closeEventModal()"
+                                    class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                                    Close
+                                </button>
+                                <button onclick="editEventFromModal()"
+                                    class="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors">
+                                    Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
