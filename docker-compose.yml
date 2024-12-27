@@ -3,6 +3,8 @@ version: '3.8'
 services:
   soonish:
     build: .
+    env_file:
+      - .env
     ports:
       - "${SOONISH_PORT:-8000}:8000"
     volumes:

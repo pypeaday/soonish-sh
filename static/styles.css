@@ -872,3 +872,36 @@ input[data-input] {
     width: 1.5rem;
     text-align: center;
 }
+.image-selection {
+    margin-bottom: 1rem;
+}
+
+.random-images-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.random-images-grid img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    transition: border-color 0.2s ease;
+}
+
+.random-images-grid img.selected {
+    border-color: var(--accent-color);
+}
+
+.image-upload {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.image-upload input[type="file"] {
+    margin-bottom: 0.5rem;
+}

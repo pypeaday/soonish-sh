@@ -11,6 +11,31 @@ import random
 import logging
 import os
 
+from unsplash.api import Api
+from unsplash.auth import Auth
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Initialize logger
+logger = logging.getLogger(__name__)
+
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# Add debug logging
+logger.info(f"Unsplash Access Key: {os.getenv('UNSPLASH_ACCESS_KEY')[:8]}...")
+
+auth = Auth(
+    os.getenv('UNSPLASH_ACCESS_KEY'),
+    os.getenv('UNSPLASH_SECRET_KEY'),
+    redirect_uri=""
+)
+
+
+api = Api(auth)
+
 # Initialize logger
 logger = logging.getLogger(__name__)
 
@@ -129,52 +154,12 @@ async def delete_event(event_id: int, db: Session = Depends(get_db)):
 
 @app.get("/random_images")
 async def get_random_images():
-    # List of curated Unsplash images
-    images = [
-        {
-            "urls": {
-                "small": "https://images.unsplash.com/photo-1501139083538-0139583c060f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                "regular": "https://images.unsplash.com/photo-1501139083538-0139583c060f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
-            },
-            "alt_description": "Scenic mountain landscape"
+    photos = api.photo.random(count=2)
+    return [{
+        "urls": {
+            "small": photo.urls.small,
+            "regular": photo.urls.regular
         },
-        {
-            "urls": {
-                "small": "https://images.unsplash.com/photo-1495364141860-b0d03eccd065?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                "regular": "https://images.unsplash.com/photo-1495364141860-b0d03eccd065?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
-            },
-            "alt_description": "Sunset over ocean"
-        },
-        {
-            "urls": {
-                "small": "https://images.unsplash.com/photo-1557180295-76eee20ae8aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                "regular": "https://images.unsplash.com/photo-1557180295-76eee20ae8aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
-            },
-            "alt_description": "Mountain peaks at dawn"
-        },
-        {
-            "urls": {
-                "small": "https://images.unsplash.com/photo-1508962914676-134849a727f0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                "regular": "https://images.unsplash.com/photo-1508962914676-134849a727f0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
-            },
-            "alt_description": "Northern lights"
-        },
-        {
-            "urls": {
-                "small": "https://images.unsplash.com/photo-1465929639680-64ee080eb3ed?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                "regular": "https://images.unsplash.com/photo-1465929639680-64ee080eb3ed?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
-            },
-            "alt_description": "Starry night sky"
-        },
-        {
-            "urls": {
-                "small": "https://images.unsplash.com/photo-1518281420975-50db6e5d0a97?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                "regular": "https://images.unsplash.com/photo-1518281420975-50db6e5d0a97?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
-            },
-            "alt_description": "Desert landscape"
-        }
-    ]
-    
-    # Randomly select 6 images
-    selected_images = random.sample(images, 6)
-    return selected_images
+        "alt_description": photo.alt_description or "Random image"
+    } for photo in photos]
+

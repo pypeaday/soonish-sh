@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,12 +39,12 @@
                 theme: "dark",
                 clickOpens: true,
                 closeOnSelect: false,
-                onReady: function(selectedDates, dateStr, instance) {
+                onReady: function (selectedDates, dateStr, instance) {
                     // Create button container if it doesn't exist
                     if (!instance.calendarContainer.querySelector('.flatpickr-buttons')) {
                         const buttonContainer = document.createElement('div');
                         buttonContainer.className = 'flatpickr-buttons';
-                        
+
                         // Create Done button
                         const doneButton = document.createElement('button');
                         doneButton.textContent = 'Done';
@@ -51,9 +52,9 @@
                         doneButton.addEventListener('click', () => {
                             instance.close();
                         });
-                        
+
                         buttonContainer.appendChild(doneButton);
-                        
+
                         // Add button container after time picker
                         const timePicker = instance.calendarContainer.querySelector('.flatpickr-time');
                         if (timePicker) {
@@ -64,7 +65,7 @@
                     }
                 }
             };
-            
+
             const input = document.getElementById('datetime-picker');
             if (input) {
                 fp = flatpickr(input, config);
@@ -102,13 +103,13 @@
                         console.error('Event not found');
                         return;
                     }
-                    
+
                     const modal = document.getElementById('eventModal');
                     const overlay = document.getElementById('modalOverlay');
                     const modalContent = document.querySelector('.modal-content');
-                    
+
                     modalContent.style.backgroundImage = `url('${event.image_url}')`;
-                    
+
                     modalContent.innerHTML = `
                         <div class="modal-header">
                             <h2>${event.name}</h2>
@@ -155,27 +156,27 @@
                 fetch(`/api/events/${eventId}`, {
                     method: 'DELETE'
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        closeModal();
-                        // Refresh the page to show updated list
-                        window.location.reload();
-                    } else {
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            closeModal();
+                            // Refresh the page to show updated list
+                            window.location.reload();
+                        } else {
+                            alert('Failed to delete event');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
                         alert('Failed to delete event');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to delete event');
-                });
+                    });
             }
         }
 
         function closeModal() {
             const modal = document.getElementById('eventModal');
             const overlay = document.getElementById('modalOverlay');
-            
+
             modal.classList.remove('active');
             overlay.classList.remove('active');
             document.body.classList.remove('modal-open');
@@ -188,18 +189,18 @@
         function previewImage(url) {
             const imagePreview = document.getElementById('image-preview');
             const image = imagePreview.querySelector('img');
-            
+
             // If empty, use default image
             if (!url.trim()) {
                 url = "https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&auto=format&fit=crop";
                 document.getElementById('image-url').value = url;
             }
-            
+
             image.classList.remove('error');
             image.src = url;
-            
+
             // Handle image load errors
-            image.onerror = function() {
+            image.onerror = function () {
                 image.classList.add('error');
                 image.src = "https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&auto=format&fit=crop";
                 document.getElementById('image-url').value = image.src;
@@ -211,7 +212,7 @@
                 .then(response => response.json())
                 .then(events => {
                     const container = document.getElementById('events-container');
-                    
+
                     // Sort events by time remaining
                     const now = new Date().getTime();
                     events.sort((a, b) => {
@@ -219,12 +220,12 @@
                         const timeB = new Date(b.target_time).getTime() - now;
                         return timeA - timeB;
                     });
-                    
+
                     container.innerHTML = events.map(event => {
                         const targetTime = new Date(event.target_time).getTime();
                         const distance = targetTime - now;
                         const countdownText = distance < 0 ? "Time's up!" : formatCountdown(distance);
-                        
+
                         return `
                             <div class="event-card" data-event-id="${event.id}" onclick="showEvent(${event.id})" oncontextmenu="showContextMenu(event, ${event.id}); return false;">
                                 <div class="event-icon">
@@ -246,16 +247,16 @@
             contextMenu.style.display = 'block';
             contextMenu.style.left = event.pageX + 'px';
             contextMenu.style.top = event.pageY + 'px';
-            
+
             // Store the event ID for the context menu actions
             contextMenu.dataset.eventId = eventId;
-            
+
             // Remove any existing event listeners
             const existingItems = contextMenu.querySelectorAll('.context-menu-item');
             existingItems.forEach(item => {
                 item.replaceWith(item.cloneNode(true));
             });
-            
+
             // Add new event listeners
             contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
                 item.addEventListener('click', handleContextMenuAction);
@@ -265,10 +266,10 @@
         function handleContextMenuAction(e) {
             const action = e.currentTarget.dataset.action;
             const eventId = e.currentTarget.parentElement.dataset.eventId;
-            
+
             hideContextMenu();
-            
-            switch(action) {
+
+            switch (action) {
                 case 'edit':
                     editEvent(eventId);
                     break;
@@ -293,29 +294,29 @@
             const grid = document.getElementById('imageGrid');
             const button = document.getElementById('showMoreBtn');
             const icon = button.querySelector('.icon');
-            
+
             // Start rotation
             icon.style.transform = 'rotate(360deg)';
-            
+
             try {
                 console.log('Fetching from /random_images');
                 const response = await fetch('/random_images');
                 const images = await response.json();
                 console.log('Received images:', images);
-                
+
                 // Clear existing images
                 grid.innerHTML = '';
-                
+
                 // Add new images
                 images.forEach(image => {
                     const div = document.createElement('div');
                     div.className = 'image-item';
-                    
+
                     const img = document.createElement('img');
                     img.src = image.urls.small;
                     img.alt = image.alt_description || 'Random image';
                     img.loading = 'lazy';
-                    
+
                     // Add click handler to both div and img
                     const clickHandler = () => {
                         console.log('Image clicked:', image.urls.regular);
@@ -326,18 +327,18 @@
                         }
                         closeImagePicker();
                     };
-                    
+
                     div.addEventListener('click', clickHandler);
                     img.addEventListener('click', clickHandler);
-                    
+
                     div.appendChild(img);
                     grid.appendChild(div);
                 });
-                
+
             } catch (error) {
                 console.error('Error loading images:', error);
             }
-            
+
             // Reset rotation after animation
             setTimeout(() => {
                 icon.style.transform = '';
@@ -349,7 +350,7 @@
             if (event) {
                 event.preventDefault();
             }
-            
+
             loadRandomImages();
         }
 
@@ -368,7 +369,7 @@
             document.body.classList.remove('modal-open');
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('Setting up event listeners');
             initTheme();
             initFlatpickr();
@@ -384,55 +385,103 @@
 
             // Handle form submission
             const form = document.getElementById('event-form');
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function (e) {
                 e.preventDefault();
-                
+
                 const formData = new FormData(form);
-                
+
                 fetch('/create_event', {
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        form.reset();
-                        loadEvents();
-                    }
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            form.reset();
+                            loadEvents();
+                        }
+                    });
             });
 
             // Close modal when clicking outside
             const overlay = document.getElementById('modalOverlay');
-            overlay.addEventListener('click', function(e) {
+            overlay.addEventListener('click', function (e) {
                 if (e.target === overlay) {
                     closeModal();
                 }
             });
 
             // Close modal on escape key
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     closeModal();
                 }
             });
 
             // Update document click listener to hide context menu
-            document.addEventListener('click', function(e) {
+            document.addEventListener('click', function (e) {
                 if (!e.target.closest('.context-menu')) {
                     hideContextMenu();
                 }
             });
 
             // Prevent default context menu on event cards
-            document.addEventListener('contextmenu', function(e) {
+            document.addEventListener('contextmenu', function (e) {
                 if (e.target.closest('.event-card')) {
                     e.preventDefault();
                 }
             });
         });
+        async function loadRandomImages() {
+            try {
+                const response = await fetch('/random_images');
+                const images = await response.json();
+                const grid = document.querySelector('.random-images-grid');
+                grid.innerHTML = '';
+
+                images.forEach(image => {
+                    const img = document.createElement('img');
+                    img.src = image.urls.small;
+                    img.alt = image.alt_description;
+                    img.onclick = () => {
+                        document.getElementById('image_url').value = image.urls.regular;
+                        // Add selection indicator
+                        document.querySelectorAll('.random-images-grid img').forEach(i => i.classList.remove('selected'));
+                        img.classList.add('selected');
+                    };
+                    grid.appendChild(img);
+                });
+            } catch (error) {
+                console.error('Error loading random images:', error);
+            }
+        }
+
+        // Handle custom image upload
+        document.getElementById('custom-image')?.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('image_url').value = e.target.result;
+                    // Clear any selected Unsplash images
+                    document.querySelectorAll('.random-images-grid img').forEach(i => i.classList.remove('selected'));
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Call this when the form loads or when creating/editing an event
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRandomImages();
+        });
     </script>
 </head>
+
+// You might want to remove or update the existing showImagePicker function 
+// since we're not using it anymore
+    </script>
+</head>
+
 <body>
     <div class="theme-switcher">
         <select id="theme-select" onchange="setTheme(this.value)">
@@ -453,11 +502,17 @@
                 <span class="calendar-icon">📅</span>
             </div>
             <div class="form-group">
-                <label for="image-url">Image URL</label>
-                <div class="input-group">
-                    <input type="text" id="image-url" name="image_url" placeholder="Leave empty for a random image">
-                    <button type="button" class="browse-images" onclick="showImagePicker()">Browse Images</button>
+                <label for="image_url">Background Image</label>
+                <div class="image-selection">
+                    <div class="random-images-grid">
+                        <!-- Images will be populated here via JavaScript -->
+                    </div>
+                    <div class="image-upload">
+                        <input type="file" id="custom-image" accept="image/*">
+                        <span>Or upload your own image</span>
+                    </div>
                 </div>
+                <input type="hidden" id="image_url" name="image_url">
             </div>
             <div class="form-group">
                 <input type="text" name="message" placeholder="Encouraging Message" required>
@@ -485,23 +540,6 @@
         <div class="modal-content"></div>
     </div>
 
-    <!-- Image Picker Modal -->
-    <div id="imagePickerModal" class="modal">
-        <div class="modal-content image-picker-content">
-            <div class="modal-header">
-                <h2>Choose an Image</h2>
-                <button class="modal-close" onclick="closeImagePicker()">&times;</button>
-            </div>
-            <div class="image-grid" id="imageGrid">
-                <!-- Images will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" id="showMoreBtn" class="show-more-images" onclick="loadRandomImages()">
-                    <span class="icon">↻</span>
-                    Show More Images
-                </button>
-            </div>
-        </div>
-    </div>
 </body>
+
 </html>
