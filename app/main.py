@@ -95,7 +95,18 @@ async def create_event(
     db.commit()
     db.refresh(db_event)
     
-    return {"status": "success", "id": db_event.id}
+    events = db.query(DBEvent).all()
+    return templates.TemplateResponse(
+        "partials/events_partial.html",
+        {"request": request, "events": events, "now": datetime.now()}
+    )
+
+@app.get("/create-form")
+async def get_create_form(request: Request):
+    return templates.TemplateResponse(
+        "partials/create_form.html",
+        {"request": request}
+    )
 
 @app.get("/random_images")
 async def get_random_images():
