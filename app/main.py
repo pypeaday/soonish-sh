@@ -27,14 +27,43 @@ logging.basicConfig(level=logging.INFO)
 # Add debug logging
 logger.info(f"Unsplash Access Key: {os.getenv('UNSPLASH_ACCESS_KEY')[:8]}...")
 
+# Update main.py
+from unsplash.photo import Photo
+from unsplash.models import Photo as PhotoModel
+
+# Initialize API first
 auth = Auth(
     os.getenv('UNSPLASH_ACCESS_KEY'),
     os.getenv('UNSPLASH_SECRET_KEY'),
     redirect_uri=""
 )
 
-
 api = Api(auth)
+
+# Define the new search method
+def custom_search(self, query, category=None, orientation=None, page=1, per_page=10):
+    logger.info(f"Custom search with query: {query}")
+    if orientation and orientation not in self.orientation_values:
+        raise Exception()
+    
+    params = {
+        "query": query,
+        "category": category,
+        "orientation": orientation,
+        "page": page,
+        "per_page": per_page
+    }
+    url = "/search/photos"
+    logger.info(f"Making request to {url} with params: {params}")
+    _result = self._get(url, params=params)
+    logger.info(f"Raw API response: {_result}")
+    result = _result.get("results", [])
+    logger.info(f"Extracted results: {result}")
+    return PhotoModel.parse_list(result)
+
+# Monkey patch the search method directly onto the existing photo instance
+import types
+api.photo.search = types.MethodType(custom_search, api.photo)
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -95,25 +124,49 @@ async def create_event(
     db.commit()
     db.refresh(db_event)
     
-    return {"status": "success", "id": db_event.id}
+    events = db.query(DBEvent).all()
+    return templates.TemplateResponse(
+        "partials/events_partial.html",
+        {"request": request, "events": events, "now": datetime.now()}
+    )
+
+@app.get("/create-form")
+async def get_create_form(request: Request):
+    return templates.TemplateResponse(
+        "partials/create_form.html",
+        {"request": request}
+    )
+
+@app.get("/random_images")
+async def get_random_images():
+    photos = api.photo.random(count=1)
+    if photos:
+        photo = photos[0]
+        return HTMLResponse(photo.urls.regular)
+    return HTMLResponse(random.choice(DEFAULT_IMAGES))
 
 @app.get("/api/events")
-async def get_events(db: Session = Depends(get_db)):
+async def get_events(request: Request, db: Session = Depends(get_db)):
     events = db.query(DBEvent).all()
-    logger.info(f"Returning {len(events)} events from database")
-    return [event.to_dict() for event in events]
+    return templates.TemplateResponse(
+        "partials/events_partial.html",
+        {"request": request, "events": events, "now": datetime.now()}
+    )
 
-@app.get("/api/events/{event_id}")
-async def get_event(event_id: int, db: Session = Depends(get_db)):
+@app.get("/event/{event_id}")
+async def get_event(event_id: int, request: Request, db: Session = Depends(get_db)):
     event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    logger.info(f"Found event {event_id} in database")
-    return event.to_dict()
+    return templates.TemplateResponse(
+        "event_edit.html",
+        {"request": request, "event": event}
+    )
 
-@app.put("/api/events/{event_id}")
+@app.put("/event/{event_id}")
 async def update_event(
     event_id: int,
+    request: Request,
     name: str = Form(...),
     target_time: str = Form(...),
     image_url: str = Form(""),
@@ -123,43 +176,75 @@ async def update_event(
     event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-
-    # If no image URL provided, keep the existing one or pick a random one
-    if not image_url or image_url.strip() == "":
-        if not event.image_url:
-            image_url = random.choice(DEFAULT_IMAGES)
-        else:
-            image_url = event.image_url
-
-    # Update event fields
+    
     event.name = name
     event.target_time = datetime.fromisoformat(target_time)
     event.image_url = image_url
     event.message = message
-
+    
     db.commit()
-    db.refresh(event)
-    logger.info(f"Updated event {event_id} in database")
-    return {"status": "success", "id": event.id}
+    
+    events = db.query(DBEvent).all()
+    return templates.TemplateResponse(
+        "partials/events_partial.html",
+        {"request": request, "events": events, "now": datetime.now()}
+    )
 
-@app.delete("/api/events/{event_id}")
-async def delete_event(event_id: int, db: Session = Depends(get_db)):
+@app.delete("/event/{event_id}")
+async def delete_event(event_id: int, request: Request, db: Session = Depends(get_db)):
     event = db.query(DBEvent).filter(DBEvent.id == event_id).first()
-    if event:
-        db.delete(event)
-        db.commit()
-        logger.info(f"Deleted event {event_id} from database")
-        return {"status": "success", "id": event_id}
-    return {"status": "not_found"}
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    db.delete(event)
+    db.commit()
+    
+    events = db.query(DBEvent).all()
+    return templates.TemplateResponse(
+        "partials/events_partial.html",
+        {"request": request, "events": events, "now": datetime.now()}
+    )
+import requests
 
-@app.get("/random_images")
-async def get_random_images():
-    photos = api.photo.random(count=1)
-    return [{
-        "urls": {
-            "small": photo.urls.small,
-            "regular": photo.urls.regular
-        },
-        "alt_description": photo.alt_description or "Random image"
-    } for photo in photos]
-
+@app.get("/search_images")
+async def search_images(query: str):
+    try:
+        # Direct API call to Unsplash
+        access_key = os.getenv('UNSPLASH_ACCESS_KEY')
+        url = "https://api.unsplash.com/search/photos"
+        headers = {
+            "Authorization": f"Client-ID {access_key}"
+        }
+        params = {
+            "query": query,
+            "per_page": 3
+        }
+        
+        logger.info(f"Making direct request to Unsplash API: {url}")
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        
+        data = response.json()
+        logger.info(f"Raw API response: {data}")
+        
+        photos = []
+        for photo in data.get('results', []):
+            try:
+                photo_dict = {
+                    "url": photo['urls']['regular'],
+                    "thumb": photo['urls']['thumb']
+                }
+                photos.append(photo_dict)
+                logger.info(f"Added photo: {photo_dict}")
+            except Exception as e:
+                logger.error(f"Error processing photo: {e}")
+                continue
+        
+        return JSONResponse(content={"photos": photos})
+    except Exception as e:
+        logger.error(f"Search error: {str(e)}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )

@@ -1,0 +1,156 @@
+<div class="p-6">
+    <h2 class="text-2xl font-bold mb-4">Create New Event</h2>
+    <form hx-post="/create_event"
+          hx-target="#events-container"
+          hx-swap="innerHTML">
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Name</label>
+                <input type="text" name="name" required
+                       class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-1">Target Time</label>
+                <input type="datetime-local" name="target_time" required
+                       class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-1">Message</label>
+                <textarea name="message" required
+                          class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></textarea>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-1">Image</label>
+                <div class="space-y-2">
+                    <div class="flex gap-2">
+                        <input type="text" 
+                               id="image-search"
+                               placeholder="Search Unsplash..."
+                               class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        <button type="button"
+                                onclick="searchImages()"
+                                class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">
+                            Search
+                        </button>
+                    </div>
+                    <input type="hidden" name="image_url" id="image-url-input">
+                    <div id="image-results" class="grid grid-cols-3 gap-2 mt-2"></div>
+                    <div id="image-preview" class="mt-2 hidden">
+                        <img src="" alt="Preview" class="w-full h-48 object-cover rounded-lg">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button"
+                        onclick="closeModal()"
+                        class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-white">
+                    Create Event
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function closeModal() {
+    document.getElementById('modal').classList.add('hidden');
+}
+
+function selectImage(url) {
+    console.log('Selecting image:', url);
+    document.getElementById('image-url-input').value = url;
+    const preview = document.getElementById('image-preview');
+    const img = preview.querySelector('img');
+    img.src = url;
+    preview.classList.remove('hidden');
+    document.getElementById('image-results').innerHTML = '';
+}
+
+function updateImagePreview(url) {
+    console.log('Updating preview with URL:', url);
+    const preview = document.getElementById('image-preview');
+    const img = preview.querySelector('img');
+    
+    if (url && url.trim() !== '') {
+        img.src = url;
+        preview.classList.remove('hidden');
+        img.onerror = () => {
+            console.log('Image failed to load');
+            preview.classList.add('hidden');
+        };
+        img.onload = () => {
+            console.log('Image loaded successfully');
+            preview.classList.remove('hidden');
+        };
+    } else {
+        console.log('No URL provided');
+        preview.classList.add('hidden');
+    }
+}
+
+function searchImages() {
+    const query = document.getElementById('image-search').value;
+    const results = document.getElementById('image-results');
+    
+    if (!query.trim()) return;
+    
+    results.innerHTML = '<div class="col-span-3 text-center">Searching...</div>';
+    
+    fetch(`/search_images?query=${encodeURIComponent(query)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Search response:', data);
+            
+            if (!data.photos || !Array.isArray(data.photos)) {
+                throw new Error('Invalid response format');
+            }
+            
+            if (data.photos.length === 0) {
+                results.innerHTML = '<div class="col-span-3 text-center">No results found</div>';
+                return;
+            }
+            
+            const html = data.photos.map(photo => {
+                if (!photo.url || !photo.thumb) {
+                    console.warn('Invalid photo data:', photo);
+                    return '';
+                }
+                return `
+                    <div class="aspect-w-16 aspect-h-9 cursor-pointer hover:opacity-75"
+                         onclick="selectImage('${photo.url}')">
+                        <img src="${photo.thumb}" 
+                             class="w-full h-full object-cover rounded-lg" 
+                             alt="Search result"
+                             onerror="this.parentElement.style.display='none'">
+                    </div>
+                `;
+            }).join('');
+            
+            results.innerHTML = html || '<div class="col-span-3 text-center">No valid results</div>';
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            results.innerHTML = `<div class="col-span-3 text-center text-red-500">Error: ${error.message}</div>`;
+        });
+}
+// After successful form submission
+document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+    if (evt.detail.target.id === 'events-container') {
+        closeModal();
+    }
+});
+</script>
