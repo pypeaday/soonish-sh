@@ -27,14 +27,43 @@ logging.basicConfig(level=logging.INFO)
 # Add debug logging
 logger.info(f"Unsplash Access Key: {os.getenv('UNSPLASH_ACCESS_KEY')[:8]}...")
 
+# Update main.py
+from unsplash.photo import Photo
+from unsplash.models import Photo as PhotoModel
+
+# Initialize API first
 auth = Auth(
     os.getenv('UNSPLASH_ACCESS_KEY'),
     os.getenv('UNSPLASH_SECRET_KEY'),
     redirect_uri=""
 )
 
-
 api = Api(auth)
+
+# Define the new search method
+def custom_search(self, query, category=None, orientation=None, page=1, per_page=10):
+    logger.info(f"Custom search with query: {query}")
+    if orientation and orientation not in self.orientation_values:
+        raise Exception()
+    
+    params = {
+        "query": query,
+        "category": category,
+        "orientation": orientation,
+        "page": page,
+        "per_page": per_page
+    }
+    url = "/search/photos"
+    logger.info(f"Making request to {url} with params: {params}")
+    _result = self._get(url, params=params)
+    logger.info(f"Raw API response: {_result}")
+    result = _result.get("results", [])
+    logger.info(f"Extracted results: {result}")
+    return PhotoModel.parse_list(result)
+
+# Monkey patch the search method directly onto the existing photo instance
+import types
+api.photo.search = types.MethodType(custom_search, api.photo)
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -111,13 +140,10 @@ async def get_create_form(request: Request):
 @app.get("/random_images")
 async def get_random_images():
     photos = api.photo.random(count=1)
-    return [{
-        "urls": {
-            "small": photo.urls.small,
-            "regular": photo.urls.regular
-        },
-        "alt_description": photo.alt_description or "Random image"
-    } for photo in photos]
+    if photos:
+        photo = photos[0]
+        return HTMLResponse(photo.urls.regular)
+    return HTMLResponse(random.choice(DEFAULT_IMAGES))
 
 @app.get("/api/events")
 async def get_events(request: Request, db: Session = Depends(get_db)):
@@ -178,3 +204,47 @@ async def delete_event(event_id: int, request: Request, db: Session = Depends(ge
         "partials/events_partial.html",
         {"request": request, "events": events, "now": datetime.now()}
     )
+import requests
+
+@app.get("/search_images")
+async def search_images(query: str):
+    try:
+        # Direct API call to Unsplash
+        access_key = os.getenv('UNSPLASH_ACCESS_KEY')
+        url = "https://api.unsplash.com/search/photos"
+        headers = {
+            "Authorization": f"Client-ID {access_key}"
+        }
+        params = {
+            "query": query,
+            "per_page": 3
+        }
+        
+        logger.info(f"Making direct request to Unsplash API: {url}")
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        
+        data = response.json()
+        logger.info(f"Raw API response: {data}")
+        
+        photos = []
+        for photo in data.get('results', []):
+            try:
+                photo_dict = {
+                    "url": photo['urls']['regular'],
+                    "thumb": photo['urls']['thumb']
+                }
+                photos.append(photo_dict)
+                logger.info(f"Added photo: {photo_dict}")
+            except Exception as e:
+                logger.error(f"Error processing photo: {e}")
+                continue
+        
+        return JSONResponse(content={"photos": photos})
+    except Exception as e:
+        logger.error(f"Search error: {str(e)}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
