@@ -1,147 +1,44 @@
-# Soonish Self Hosted - Event Countdown Application
+# 🎯 Soonish (SH) Self Hosted
 
-Soonish-sh is a sleek web application that helps you track upcoming events with beautiful visual countdowns. Built with FastAPI and modern web technologies, it provides an intuitive interface for managing your important dates and events.
+✨ A delightfully minimal countdown app that helps you track life's exciting moments! Built with FastAPI and sprinkled with modern web magic ✨
 
-## TODOs
+## 🌟 Features
+- 📅 Create and manage event countdowns
+- 🖼️ Beautiful images from Unsplash
+- 🌓 Light/dark theme
+- ⚡ Real-time updates with HTMX
+- 🐳 Easy Docker deployment
 
-This app was mostly built with windsurf. I've started using cline more, but when my windsurf credits renew I'd like to polish this up.
+## 🚀 Quick Start
 
-## Screenshots
+### 1. 📸 Get Your Unsplash Powers
+1. Visit [Unsplash Developers](https://unsplash.com/developers) 
+2. Create your free developer account
+3. Hit that "New Application" button
+4. Grab your Access Key and Secret Key
 
-### Themes
-Choose from three beautiful themes to match your style:
+### 2. ⚙️ Configuration
+1. Clone this fabulous repo:
+   ```bash
+   git clone https://github.com/pypeaday/soonish-sh.git
+   cd soonish-sh
+2. Create a `.env` file:
 
-#### Gruvbox Theme
-![Gruvbox theme screenshot](screenshots/themes/gruvbox.png)
+   `cp .env.example .env`
+3. Pop your unsplash credentials in there
+4. 🐋 Launch with Docker
+   `docker compose up --build -d`
 
-#### Nord Theme
-![Nord theme screenshot](screenshots/themes/nord.png)
+That's it! Visit http://localhost:8000 and start counting down to your awesome events! 🎉
 
-#### Tokyo Night Theme
-![Tokyo Night theme screenshot](screenshots/themes/tokyo-night.png)
+📝 Notes
+Data is stored in a local SQLite database
+Images are fetched from Unsplash in real-time
+The app runs on port 8000 by default
+🤝 Contributing
+Found a bug? Want to add something cool? PRs are welcome!
 
-### Event Cards
-Smart, compact event cards show you what matters:
+📜 License
+MIT - Go wild! 🎨
 
-![Event cards in different states](screenshots/features/event-card.png)
-
-### Event Backgrounds
-Personalize your events with beautiful backgrounds:
-
-![Event detail with background](screenshots/features/event-detail.png)
-
-## Features
-
-### Event Management
-- **Create Events**: Add new events with custom names, target dates, and messages
-- **Visual Countdowns**: Each event displays a live countdown showing days, hours, minutes, and seconds
-- **Smart Sorting**: Events are automatically sorted by time remaining, with closest events first
-- **Context Menu**: Right-click any event to edit or delete it
-- **Event Details**: Click any event to view full details
-
-### Image Integration
-- **Event Images**: Each event can have an associated image
-- **Image Picker**: Built-in image selector with curated Unsplash images
-- **Image Preview**: Preview selected images before creating an event
-- **Compact Display**: Events show thumbnail-sized images (48x48px) for a clean interface
-
-### User Interface
-- **Modern Design**: Clean, modern interface with a dark theme
-- **Theme Options**: Choose between Gruvbox, Nord, and Tokyo Night themes
-- **Responsive Layout**: Works well on different screen sizes
-- **Interactive Elements**: Hover effects and smooth transitions
-
-### Technical Features
-- **Real-time Updates**: Countdowns update in real-time
-- **FastAPI Backend**: Fast and efficient Python-based backend
-- **Static Image Pool**: Curated collection of Unsplash images for quick loading
-- **Error Handling**: Graceful handling of image loading errors with fallbacks
-
-## Getting Started
-
-### Using Docker (Recommended)
-
-1. Make sure you have Docker and Docker Compose installed on your system.
-
-2. Clone the repository and navigate to the project directory:
-```bash
-git clone https://github.com/pypeaday/soonish-sh.git
-cd soonish-sh
-```
-
-3. Start the application using Docker Compose:
-```bash
-docker compose up
-```
-
-4. Open your browser and navigate to `http://localhost:8000`
-
-The application will automatically reload when you make changes to the code.
-
-### Manual Installation
-
-If you prefer not to use Docker, you can run the application directly:
-
-1. Install the required dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Run the application:
-```bash
-python app.py
-```
-
-3. Open your browser and navigate to `http://localhost:8000`
-
-## Usage
-
-1. **Creating an Event**:
-   - Fill in the event name and target date
-   - (Optional) Add a message and select an image
-   - Click "Create Event"
-
-2. **Managing Events**:
-   - Events are automatically sorted by time remaining
-   - Left-click an event to view details
-   - Right-click an event to edit or delete it
-   - Events with passed target dates will show "Time's up!"
-
-3. **Customizing the Look**:
-   - Use the theme switcher in the top-right to change the application theme
-   - Choose from Gruvbox, Nord, or Tokyo Night themes
-
-## Development
-
-### Project Structure
-```
-soonish-sh/
-├── app/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── database.py
-│   ├── templates/
-│   │   └── index.html
-│   └── static/
-│       └── styles.css
-├── app.py
-├── Dockerfile
-├── docker-compose.yml
-└── requirements.txt
-```
-
-### Environment Variables
-
-- `SOONISH_PORT`: The port number to run the application on (default: 8000)
-
-### Docker Commands
-
-- Start the application: `docker compose up`
-- Rebuild the container: `docker compose up --build`
-- Stop the application: `docker compose down`
-- View logs: `docker compose logs -f`
-- Run on a different port: `SOONISH_PORT=3000 docker compose up`
-
-## Contributing
-
-Feel free to submit issues and enhancement requests!
+Made with 💖 and 🤖
